@@ -1,0 +1,71 @@
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert/strict');
+const puppeteer = require('C:/Users/ChatPC/AppData/Local/npm-cache/_npx/668c188756b835f3/node_modules/puppeteer');
+const root = path.resolve(__dirname, '..');
+const settings = JSON.parse(fs.readFileSync(path.join(root, '.runtime/local-settings.json'), 'utf8').replace(/^\uFEFF/, ''));
+const output = path.join(root, 'docs/screenshots');
+fs.mkdirSync(output, { recursive: true });
+
+(async () => {
+  const browser = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--disable-gpu'] });
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  const errors = [], external = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('request', request => { if (/^https?:/.test(request.url()) && !request.url().startsWith('http://127.0.0.1:8080/')) external.push(request.url()); });
+  const checks = [];
+  async function capture(name) { await page.screenshot({ path: path.join(output, name + '.png'), fullPage: true }); }
+  async function navigate(action) { await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}), action()]); }
+  try {
+    let response = await page.goto('http://127.0.0.1:8080/rooms', {waitUntil:'networkidle0'});
+    assert.equal(response.status(), 200);
+    assert.equal(new URL(page.url()).pathname, '/login');
+    await capture('01-login');
+    checks.push('Unauthenticated rooms redirect to Login.');
+    await page.type('#username', 'reception01');
+    await page.type('#password', settings.staff01Password);
+    await navigate(() => page.click('button[type=submit]'));
+    assert.equal(new URL(page.url()).pathname, '/');
+    await capture('02-main-menu');
+    checks.push('Provisioned staff login succeeds; main menu renders Thai.');
+    await page.goto('http://127.0.0.1:8080/rooms', {waitUntil:'networkidle0'});
+    await capture('03-room-search');
+    await navigate(() => page.click('.search-submit'));
+    assert.equal(await page.$eval('#available-count', e => e.textContent), '27');
+    assert.equal((await page.$$('[data-room]')).length, 27);
+    await capture('04-standard-results');
+    checks.push('Standard search displays 27 unique confirmed rooms.');
+    await page.select('#roomType', 'Suite');
+    await navigate(() => page.click('.search-submit'));
+    assert.equal(await page.$eval('#available-count', e => e.textContent), '2');
+    assert.deepEqual(await page.$$eval('[data-room]', rows => rows.map(r => r.dataset.room)), ['2606', '2608']);
+    checks.push('New search replaces results with Suite 2606/2608.');
+    await page.$eval('#requiredRooms', element => { element.value = '3'; });
+    await navigate(() => page.click('.search-submit'));
+    assert.match(await page.$eval('.shortfall', element => element.innerText), /1 ห้อง/);
+    await capture('05-shortfall');
+    checks.push('Three requested Suites show two available and one short.');
+    await page.$eval('#checkOutDate', element => { element.value = document.querySelector('#checkInDate').value; });
+    await navigate(() => page.click('.search-submit'));
+    assert.equal(await page.$('#available-count'), null);
+    assert.match(await page.$eval('.field-error', element => element.innerText), /อย่างน้อย 1 คืน/);
+    await capture('06-invalid-dates');
+    checks.push('Invalid dates clear prior results and display field feedback.');
+    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+    await page.goto('http://127.0.0.1:8080/rooms', {waitUntil:'networkidle0'});
+    await capture('07-mobile-search');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    checks.push('Search layout fits a 390px viewport without page overflow.');
+    await navigate(() => page.click('.logout'));
+    assert.equal(new URL(page.url()).pathname, '/login');
+    await page.goto('http://127.0.0.1:8080/rooms', {waitUntil:'networkidle0'});
+    assert.equal(new URL(page.url()).pathname, '/login');
+    checks.push('Logout removes access to protected rooms.');
+    assert.deepEqual(errors, []);
+    assert.deepEqual(external, []);
+    checks.push('No browser script errors or external font/CDN requests.');
+    fs.writeFileSync(path.join(root, 'docs/browser-checks.json'), JSON.stringify({passed:true, checks, testedAt:new Date().toISOString()}, null, 2));
+    console.log(JSON.stringify({passed:true, checks:checks.length, screenshots:output}));
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error.message); process.exit(1); });

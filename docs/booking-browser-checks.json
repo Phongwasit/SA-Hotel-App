@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    "UC01 selected rooms/dates prefill the UC02 create form.",
+    "Create commits one booking with two rooms and renders read-back.",
+    "A new UC01 search excludes both reserved rooms.",
+    "Edit adds Deluxe 1401 and cancels removed 2402 while retaining history rows.",
+    "Cancel-all cancels every remaining BOOKED room and preserves all item rows.",
+    "UC01 availability returns to 27 Standard rooms after cancellation.",
+    "The cancelled booking remains searchable by the original booker.",
+    "No browser JavaScript errors during dynamic row addition/removal and booking flow."
+  ],
+  "bookingId": 361,
+  "fixtureBookerName": "BROWSER_UC02_1793807905495",
+  "testDatabase": "hotel_frontdesk_test",
+  "testedAt": "2026-11-04T15:58:40.817Z",
+  "databaseChecks": {
+    "retainedItemsBeforeCleanup": 3,
+    "cancelledItems": 3,
+    "editHistory": 1,
+    "cancelHistory": 1
+  },
+  "testFixtureCleanedUp": true
+}

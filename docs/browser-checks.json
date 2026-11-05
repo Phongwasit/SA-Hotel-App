@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    "Unauthenticated rooms redirect to Login.",
+    "Provisioned staff login succeeds; main menu renders Thai.",
+    "Standard search displays 27 unique confirmed rooms.",
+    "New search replaces results with Suite 2606/2608.",
+    "Three requested Suites show two available and one short.",
+    "Invalid dates clear prior results and display field feedback.",
+    "Search layout fits a 390px viewport without page overflow.",
+    "Logout removes access to protected rooms.",
+    "No browser script errors or external font/CDN requests."
+  ],
+  "testedAt": "2026-11-04T16:01:36.697Z"
+}

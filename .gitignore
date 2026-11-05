@@ -1,0 +1,17 @@
+/target/
+/.runtime/
+/.env
+/.env.*
+!/.env.example
+*.log
+**/__pycache__/
+*.py[cod]
+/node_modules/
+/demo-accounts.txt
+/local-settings.json
+*.pem
+*.key
+*.p12
+*.pfx
+.DS_Store
+Thumbs.db

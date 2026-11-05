@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="th" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>เข้าสู่ระบบ | Hotel Front Desk</title><link rel="stylesheet" th:href="@{/css/hotel.css}"></head>
+<body class="login-page">
+<main class="login-layout">
+    <section class="login-brand-panel" aria-label="ระบบจัดการโรงแรม">
+        <div class="brand brand-light"><span class="brand-icon">H<span>·</span></span><span><strong>HOTEL</strong><small>FRONT DESK</small></span></div>
+        <div class="login-intro"><p class="eyebrow">ยินดีต้อนรับกลับ</p><h1>เริ่มต้นงานต้อนรับ<br>อย่างเป็นระเบียบ</h1><p>ค้นหาห้องว่างตามวันพักและประเภทห้อง<br>พร้อมข้อมูลล่าสุดสำหรับการให้บริการ</p></div>
+        <div class="building-art" aria-hidden="true"><div class="building-roof"></div><div class="building"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="building-base"></div></div>
+        <p class="login-brand-footer">ระบบจัดการโรงแรม · พื้นที่ทำงานของพนักงานต้อนรับ</p>
+    </section>
+    <section class="login-form-panel">
+        <div class="login-form-container">
+            <span class="section-tag">พนักงานต้อนรับ</span><h2>เข้าสู่ระบบ</h2><p class="muted login-description">ใช้บัญชีพนักงานของคุณเพื่อเริ่มทำงาน</p>
+            <div class="alert alert-error" role="alert" th:if="${loginError != null}" th:text="${loginError}"></div>
+            <div class="alert alert-success" role="status" th:if="${param.logout != null}">ออกจากระบบเรียบร้อยแล้ว</div>
+            <form th:action="@{/login}" method="post" class="login-form">
+                <div class="field"><label for="username">ชื่อผู้ใช้</label><input id="username" name="username" type="text" th:value="${username}" autocomplete="username" maxlength="50" placeholder="ชื่อบัญชีพนักงาน" required autofocus></div>
+                <div class="field"><label for="password">รหัสผ่าน</label><input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" placeholder="กรอกรหัสผ่าน" required></div>
+                <button class="button button-primary login-submit" type="submit">เข้าสู่ระบบ <span aria-hidden="true">→</span></button>
+            </form>
+            <p class="login-help">ใช้บัญชีที่เตรียมไว้ให้แล้ว หากเข้าใช้งานไม่ได้<br>ให้ตรวจสอบชื่อผู้ใช้และรหัสผ่านของคุณอีกครั้ง</p>
+        </div>
+        <span class="login-footer">Hotel Front Desk</span>
+    </section>
+</main>
+</body></html>

@@ -1,0 +1,76 @@
+{
+  "verifiedAt": "2026-11-04T16:05:02.476510+00:00",
+  "businessTables": 16,
+  "storedFields": 83,
+  "foreignKeyRelationships": 22,
+  "rooms": 41,
+  "staffAccounts": 2,
+  "jdk": "21.0.7",
+  "springBoot": "3.5.16",
+  "mysqlVersion": "8.4.13",
+  "junit": {
+    "tests": 71,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "browserChecks": 37,
+  "browserPassed": true,
+  "browserBookingFixtureCleanedUp": true,
+  "implemented": [
+    "Login/Logout",
+    "Main menu",
+    "UC01",
+    "UC02",
+    "UC03",
+    "UC04",
+    "UC05",
+    "UC06",
+    "UC07",
+    "UC08",
+    "UC09",
+    "UC10"
+  ],
+  "notImplemented": null,
+  "designSynchronizationPending": "Align diagram/UCD/Query/Class/UI documentation with implementation, particularly H23 UC02; peer acceptance and report assembly remain open.",
+  "relocation": {
+    "checkedAt": "2026-11-04T15:19:51.511023+00:00",
+    "destination": "C:\\Workaholic\\University Subjects\\Active Subjects\\SA\\Project_new_ver\\hotel-app",
+    "sourceAbsent": true,
+    "fullTreeVerifiedBeforePathEdits": 1912,
+    "settingsAndPasswordsPreserved": true,
+    "junit": {
+      "tests": 44,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "browserChecksRerun": 9,
+    "mainDatabase": {
+      "rooms": 41,
+      "roomTypes": 3,
+      "employees": 2,
+      "bookings": 0,
+      "stays": 0,
+      "payments": 0
+    },
+    "loginUrl": "http://127.0.0.1:8080/login"
+  },
+  "workflowBrowserChecks": 20,
+  "workflowBrowserFixtureCleanedUp": true,
+  "mainDatabase": {
+    "rooms": 41,
+    "roomTypes": 3,
+    "staffAccounts": 2,
+    "guests": 0,
+    "bookings": 0,
+    "stays": 0,
+    "payments": 0,
+    "receipts": 0
+  },
+  "mainDatabaseFixtureFree": true,
+  "settingsAndPasswordsPreserved": true,
+  "unchangedDesignAndReferenceFiles": 35,
+  "jarSha256": "951b6943f2e1ab79de2ab560b8cc83caa459107b697147c1a09af670a9e2818d",
+  "testRunner": "Dedicated Maven JVM with forkCount=0; hidden py launcher on Windows; actual exit code checked"
+}

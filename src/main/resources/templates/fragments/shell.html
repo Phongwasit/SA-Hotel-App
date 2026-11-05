@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="th" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside class="sidebar" th:fragment="sidebar">
+    <a class="brand" th:href="@{/}" aria-label="หน้าหลักระบบโรงแรม">
+        <span class="brand-icon" aria-hidden="true">H<span>·</span></span>
+        <span><strong>HOTEL</strong><small>งานต้อนรับ</small></span>
+    </a>
+    <div class="sidebar-label">พื้นที่ทำงาน</div>
+    <nav class="navigation" aria-label="เมนูหลัก">
+        <a th:href="@{/}" th:classappend="${activePage == 'home'} ? 'active'" th:attr="aria-current=${activePage == 'home' ? 'page' : null}"><span aria-hidden="true">⌂</span> ภาพรวม</a>
+        <a th:href="@{/rooms}" th:classappend="${activePage == 'rooms'} ? 'active'" th:attr="aria-current=${activePage == 'rooms' ? 'page' : null}"><span aria-hidden="true">⌕</span> ตรวจสอบห้องว่าง</a>
+        <a th:href="@{/bookings}" th:classappend="${activePage == 'bookings'} ? 'active'" th:attr="aria-current=${activePage == 'bookings' ? 'page' : null}"><span aria-hidden="true">▤</span> จัดการการจอง</a>
+        <a th:href="@{/profiles}" th:classappend="${activePage == 'profiles'} ? 'active'"><span aria-hidden="true">♙</span> ผู้พัก / ผู้รับเอกสาร</a>
+        <a th:href="@{/check-in}" th:classappend="${activePage == 'checkin'} ? 'active'"><span aria-hidden="true">⇥</span> บันทึกเช็คอิน</a>
+        <a th:href="@{/stays}" th:classappend="${activePage == 'stays'} ? 'active'"><span aria-hidden="true">▤</span> รายการเข้าพัก</a>
+        <a th:href="@{/payments}" th:classappend="${activePage == 'payments'} ? 'active'"><span aria-hidden="true">฿</span> รับชำระเงิน</a>
+        <a th:href="@{/documents}" th:classappend="${activePage == 'documents'} ? 'active'"><span aria-hidden="true">▧</span> Folio / ใบเสร็จ</a>
+        <a th:href="@{/check-out}" th:classappend="${activePage == 'checkout'} ? 'active'"><span aria-hidden="true">⇤</span> บันทึกเช็คเอาต์</a>
+        <a th:href="@{/room-status}" th:classappend="${activePage == 'status'} ? 'active'"><span aria-hidden="true">▦</span> สถานะห้อง</a>
+        <a th:href="@{/reports/stays}" th:classappend="${activePage == 'stayreport'} ? 'active'"><span aria-hidden="true">▥</span> รายงานการเข้าพัก</a>
+        <a th:href="@{/reports/cash}" th:classappend="${activePage == 'cashreport'} ? 'active'"><span aria-hidden="true">฿</span> รายงานเงินสดรับจริง</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="status-dot"></span> งานต้อนรับ · คอมพิวเตอร์โรงแรม</div>
+</aside>
+<header class="topbar" th:fragment="topbar">
+    <div class="topbar-location"><span class="status-dot"></span> แผนกต้อนรับ</div>
+    <div class="user-menu" th:if="${staff != null}">
+        <span class="avatar" aria-hidden="true" th:text="${#strings.substring(staff.displayName,0,1)}">พ</span>
+        <span class="user-info"><strong th:text="${staff.displayName}">พนักงานต้อนรับ</strong><small th:text="${staff.username}">reception01</small></span>
+        <form th:action="@{/logout}" method="post"><button class="logout" type="submit">ออกจากระบบ</button></form>
+    </div>
+</header>
+<footer class="page-footer" th:fragment="footer"><span>ระบบจัดการโรงแรม</span><span>สำหรับพนักงานต้อนรับ</span></footer>
+</body></html>
