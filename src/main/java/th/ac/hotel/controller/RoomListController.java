@@ -13,6 +13,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriComponentsBuilder;
 import th.ac.hotel.model.BlockingInterval;
 import th.ac.hotel.model.Room;
 import th.ac.hotel.model.RoomCollection;
@@ -29,6 +31,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Controller
 public class RoomListController {
@@ -56,12 +60,32 @@ public class RoomListController {
     }
 
     @PostMapping("/rooms/search")
-    public String search(@ModelAttribute("form") RoomSearchForm form, Model model, HttpServletResponse response) {
+    public String search(@ModelAttribute("form") RoomSearchForm form,
+                         @RequestParam(defaultValue = "") List<String> roomIds,
+                         @RequestParam(defaultValue = "") String selectionCheckInDate,
+                         @RequestParam(defaultValue = "") String selectionCheckOutDate,
+                         @RequestParam(defaultValue = "") String removeRoomId,
+                         @RequestParam(defaultValue = "") String next,
+                         Model model, HttpServletResponse response) {
         // Repeat the FULL load/store cycle on every search, including repeated criteria.
         RoomCollection collection = loadRoomList(model, response);
         if (collection == null) return "rooms";
 
         Map<String, String> errors = new LinkedHashMap<>();
+        Set<Integer> selectedIds = new LinkedHashSet<>();
+        if (roomIds.size() > collection.size()) errors.put("selection", "เลือกห้องเกินจำนวนห้องทั้งหมด");
+        for (String raw : roomIds) {
+            if (raw.isBlank()) continue;
+            try {
+                int id = Integer.parseInt(raw);
+                if (collection.findRoom(id) == null) throw new IllegalArgumentException();
+                if (!raw.equals(removeRoomId)) selectedIds.add(id);
+            } catch (IllegalArgumentException problem) { errors.put("selection", "ข้อมูลห้องที่เลือกไม่ถูกต้อง กรุณาเลือกใหม่"); }
+        }
+        // Preserve picks on an invalid criteria submission; no availability claim until validation succeeds.
+        model.addAttribute("selectedRooms", selectedIds.stream().map(collection::findRoom).toList());
+        model.addAttribute("hiddenSelectedRooms", selectedIds.stream().map(collection::findRoom).toList());
+        model.addAttribute("selectedRoomIds", selectedIds);
         if (!ROOM_TYPES.contains(form.getRoomType())) errors.put("roomType", "กรุณาเลือกประเภทห้อง");
         LocalDate checkIn = parseDate(form.getCheckInDate(), "checkInDate", errors);
         LocalDate checkOut = parseDate(form.getCheckOutDate(), "checkOutDate", errors);
@@ -81,15 +105,46 @@ public class RoomListController {
             return "rooms";
         }
 
+        boolean datesChanged = (!selectionCheckInDate.isBlank() || !selectionCheckOutDate.isBlank())
+                && (!form.getCheckInDate().equals(selectionCheckInDate) || !form.getCheckOutDate().equals(selectionCheckOutDate));
+        boolean lostSelection = false;
+        if (datesChanged && !selectedIds.isEmpty()) {
+            selectedIds.clear(); lostSelection = true;
+            model.addAttribute("selectionNotice", "เปลี่ยนวันพักแล้ว กรุณาเลือกห้องสำหรับช่วงวันใหม่อีกครั้ง");
+        }
+        Set<Integer> availableIds = new LinkedHashSet<>();
+        for (String type : ROOM_TYPES) collection.getRooms(type, checkIn, checkOut, 1).forEach(room -> availableIds.add(room.roomId()));
+        if (selectedIds.removeIf(id -> !availableIds.contains(id))) {
+            lostSelection = true;
+            model.addAttribute("selectionNotice", "มีห้องที่ไม่ว่างในช่วงวันที่เลือกแล้ว ระบบนำห้องนั้นออก กรุณาตรวจรายการอีกครั้ง");
+        }
+
         List<Room> matchingRooms = collection.getRooms(form.getRoomType(), checkIn, checkOut, requiredRooms);
         model.addAttribute("searched", true);
         model.addAttribute("matchingRooms", matchingRooms);
+        var selected = selectedIds.stream().map(collection::findRoom).toList();
+        Set<Integer> shownIds = new LinkedHashSet<>();
+        matchingRooms.forEach(room -> shownIds.add(room.roomId()));
+        model.addAttribute("selectedRooms", selected);
+        model.addAttribute("selectedRoomIds", selectedIds);
+        model.addAttribute("hiddenSelectedRooms", selected.stream().filter(room -> !shownIds.contains(room.roomId())).toList());
         model.addAttribute("availableCount", matchingRooms.size());
         model.addAttribute("requiredCount", requiredRooms);
         model.addAttribute("shortfall", Math.max(0, requiredRooms - matchingRooms.size()));
         model.addAttribute("nights", java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut));
         model.addAttribute("dateSummary", checkIn.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                 + " – " + checkOut.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        if ("booking".equals(next)) {
+            if (selected.isEmpty() || lostSelection) {
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                model.addAttribute("selectionError", selected.isEmpty() ? "เลือกห้องอย่างน้อย 1 ห้องก่อนสร้างรายการจอง" : "รายการห้องที่เลือกเปลี่ยนไป กรุณาตรวจและยืนยันอีกครั้ง");
+            } else {
+                var target = UriComponentsBuilder.fromPath("/bookings/new")
+                        .queryParam("checkInDate", checkIn).queryParam("checkOutDate", checkOut);
+                selectedIds.forEach(id -> target.queryParam("roomIds", id));
+                return "redirect:" + target.build().encode().toUriString();
+            }
+        }
         return "rooms";
     }
 
@@ -99,6 +154,9 @@ public class RoomListController {
         model.addAttribute("searched", false);
         model.addAttribute("errors", Map.of());
         model.addAttribute("matchingRooms", List.of());
+        model.addAttribute("selectedRooms", List.of());
+        model.addAttribute("hiddenSelectedRooms", List.of());
+        model.addAttribute("selectedRoomIds", Set.of());
         try {
             // roomRowMapper is a grouping ResultSetExtractor: one Room per room_id.
             List<Room> availableRooms = jdbcTemplate.query(queryUC01_1, roomRowMapper);

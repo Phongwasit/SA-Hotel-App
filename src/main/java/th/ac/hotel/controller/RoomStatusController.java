@@ -20,6 +20,15 @@ public class RoomStatusController extends DeskSupport {
         if(roomId!=null) {Room room=collection.findRoom(roomId);check(room!=null,404,"ไม่พบห้อง");model.addAttribute("selectedRoom",room);}
         return "room-status";
     }
+    @GetMapping(value="/room-status/data",produces="application/json")
+    @ResponseBody
+    public List<RoomStateView> roomStates() {
+        var collection=new RoomCollection();collection.storeRoomStates(loadRooms());
+        return collection.rooms().stream().map(room->new RoomStateView(room.roomId(),room.roomNumber(),room.roomType(),
+                room.occupancy(),room.cleanliness(),room.usability(),room.conditionReason())).toList();
+    }
+    public record RoomStateView(int roomId,String roomNumber,String roomType,String occupancy,
+                                String cleanliness,String usability,String conditionReason) {}
     @PostMapping("/room-status/save")
     public String save(@RequestParam MultiValueMap<String,String> input) {
         int room=id(value(input,"roomId"));String clean=value(input,"cleanliness"),usable=value(input,"usability"),reason=text(input,"reason",500,true);

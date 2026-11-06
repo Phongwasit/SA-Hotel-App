@@ -153,6 +153,7 @@ public class BookingController {
         if ("CREATE".equals(action) && id != null) errors.add("การสร้างรายการใหม่ต้องไม่อ้างรหัสการจองเดิม");
         if (!"CANCEL".equals(action)) {
             if (name.isBlank() || name.length()>200) errors.add("กรอกชื่อผู้จองไม่เกิน 200 ตัวอักษร");
+            else if (!NameRules.person(name)) errors.add("ชื่อผู้จองต้องมีตัวอักษรและไม่มีตัวเลข ใช้เว้นวรรค จุด ขีด หรืออัญประกาศในชื่อได้");
             if (phone.isBlank() || phone.length()>30) errors.add("กรอกเบอร์โทรไม่เกิน 30 ตัวอักษร");
             int size = input.getOrDefault("roomIds", List.of()).size();
             if (input.getOrDefault("itemIds",List.of()).size()!=size || input.getOrDefault("checkInDates",List.of()).size()!=size || input.getOrDefault("checkOutDates",List.of()).size()!=size) errors.add("ข้อมูลรายการห้องไม่ครบ กรุณาเปิดแบบฟอร์มใหม่");
@@ -261,6 +262,7 @@ public class BookingController {
     }
 
     private void prepareForm(Model model,String action,Integer id,String name,String phone,List<BookingRow> rows,Set<String> removed) {
+        model.addAttribute("personNamePattern",NameRules.PERSON_PATTERN);
         model.addAttribute("action",action); model.addAttribute("bookingId",id); model.addAttribute("bookerName",name);
         model.addAttribute("phone",phone); model.addAttribute("rows",rows); model.addAttribute("removedItemIds",removed); model.addAttribute("formErrors",List.of());
     }
