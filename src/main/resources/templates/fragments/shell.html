@@ -11,7 +11,7 @@
         <a th:href="@{/}" th:classappend="${activePage == 'home'} ? 'active'" th:attr="aria-current=${activePage == 'home' ? 'page' : null}"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('home')}"></svg></span> ภาพรวม</a>
         <a th:href="@{/rooms}" th:classappend="${activePage == 'rooms'} ? 'active'" th:attr="aria-current=${activePage == 'rooms' ? 'page' : null}"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span> ตรวจสอบห้องว่าง</a>
         <a th:href="@{/bookings}" th:classappend="${activePage == 'bookings'} ? 'active'" th:attr="aria-current=${activePage == 'bookings' ? 'page' : null}"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('booking')}"></svg></span> จัดการการจอง</a>
-        <a th:href="@{/profiles}" th:classappend="${activePage == 'profiles'} ? 'active'"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('guests')}"></svg></span> ผู้พัก / ผู้รับเอกสาร</a>
+        <a th:href="@{/profiles}" th:classappend="${activePage == 'profiles'} ? 'active'"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('guests')}"></svg></span> ข้อมูลลูกค้า</a>
         <a th:href="@{/check-in}" th:classappend="${activePage == 'checkin'} ? 'active'"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('checkin')}"></svg></span> บันทึกเช็คอิน</a>
         <a th:href="@{/stays}" th:classappend="${activePage == 'stays'} ? 'active'"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('stays')}"></svg></span> รายการเข้าพัก</a>
         <a th:href="@{/payments}" th:classappend="${activePage == 'payments'} ? 'active'"><span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('payment')}"></svg></span> รับชำระเงิน</a>

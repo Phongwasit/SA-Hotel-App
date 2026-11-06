@@ -83,16 +83,16 @@ class FrontDeskWorkflowTest {
         for(String path:List.of("/profiles","/profiles?recordType=DOCUMENT_RECIPIENT","/profiles?profileId="+guest,"/check-in","/stays","/stays/"+stay,"/payments","/documents","/check-out?stayId="+stay,"/room-status?roomId="+room("2401"),"/reports/stays","/reports/cash"))mvc.perform(auth(get(path))).andExpect(status().isOk());
     }
     @Test void createAndEditGuestUsesBoundParametersAndRetainsId()throws Exception{
-        var result=mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("firstName","O'Brien").param("lastName","ใหม่").param("cardType","PASSPORT").param("officialId","Test-123").param("phone","0801234567"))).andExpect(status().is3xxRedirection()).andReturn();
+        var result=mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("firstName","O'Brien").param("lastName","ใหม่").param("cardType","PASSPORT").param("officialId","0001234567890").param("phone","0801234567"))).andExpect(status().is3xxRedirection()).andReturn();
         int id=Integer.parseInt(result.getResponse().getRedirectedUrl().split("profileId=")[1].split("&")[0]);guests.add(id);
-        mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("profileId",""+id).param("firstName","แก้แล้ว").param("lastName","เดิม").param("cardType","PASSPORT").param("officialId","Test-123"))).andExpect(status().is3xxRedirection());
+        mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("profileId",""+id).param("firstName","แก้แล้ว").param("lastName","เดิม").param("cardType","PASSPORT").param("officialId","0001234567890"))).andExpect(status().is3xxRedirection());
         assertThat(jdbc.queryForObject("SELECT first_name FROM guest WHERE guest_id=?",String.class,id)).isEqualTo("แก้แล้ว");
         mvc.perform(auth(get("/profiles").param("searchText","' OR 1=1 --"))).andExpect(model().attribute("profiles",hasSize(0)));
     }
     @Test void guestTitlePersistsSeparatelyAndCanBeChangedOrCleared()throws Exception{
         for(String title:List.of("นาย","นาง","นางสาว","")) {
             mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("profileId",""+guest)
-                    .param("title",title).param("firstName","ชื่อจริง").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","Title-"+guest)))
+                    .param("title",title).param("firstName","ชื่อจริง").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","9000"+guest)))
                     .andExpect(status().is3xxRedirection());
             assertThat(jdbc.queryForObject("SELECT title FROM guest WHERE guest_id=?",String.class,guest)).isEqualTo(title.isEmpty()?null:title);
             assertThat(jdbc.queryForObject("SELECT first_name FROM guest WHERE guest_id=?",String.class,guest)).isEqualTo("ชื่อจริง");
@@ -102,12 +102,12 @@ class FrontDeskWorkflowTest {
     }
     @Test void guestTitleIsSavedOnCreateAndInvalidValuesDoNotChangeExistingProfile()throws Exception{
         var created=mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("title","นางสาว")
-                .param("firstName","สร้างใหม่").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","New-title-"+staff)))
+                .param("firstName","สร้างใหม่").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","8000"+staff)))
                 .andExpect(status().is3xxRedirection()).andReturn();
         int id=Integer.parseInt(created.getResponse().getRedirectedUrl().split("profileId=")[1].split("&")[0]);guests.add(id);
         assertThat(jdbc.queryForObject("SELECT title FROM guest WHERE guest_id=?",String.class,id)).isEqualTo("นางสาว");
         mvc.perform(auth(post("/profiles/save").with(csrf()).param("recordType","GUEST").param("profileId",""+id).param("title","INVALID")
-                .param("firstName","ห้ามเปลี่ยน").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","New-title-"+staff)))
+                .param("firstName","ห้ามเปลี่ยน").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","8000"+staff)))
                 .andExpect(status().isBadRequest());
         assertThat(jdbc.queryForObject("SELECT title FROM guest WHERE guest_id=?",String.class,id)).isEqualTo("นางสาว");
         assertThat(jdbc.queryForObject("SELECT first_name FROM guest WHERE guest_id=?",String.class,id)).isEqualTo("สร้างใหม่");

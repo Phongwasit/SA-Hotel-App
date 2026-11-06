@@ -23,9 +23,9 @@ public class EmployeeBootstrap implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        createIfMissing("reception01", "พนักงานต้อนรับ", "01");
-        createIfMissing("reception02", "พนักงานต้อนรับ", "02");
-        createIfMissing("reception03", "พนักงานต้อนรับ", "03");
+        createIfMissing("reception01", "พงศ์วสิษฐ์", "เล็กสุวรรณ");
+        createIfMissing("reception02", "นรภัทร", "วัฒนะโชติ");
+        createIfMissing("reception03", "ธีร์ธวัช", "ลิ้มแพร่พันธ์");
     }
 
     private void createIfMissing(String username, String firstName, String lastName) {

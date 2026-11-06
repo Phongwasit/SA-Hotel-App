@@ -15,9 +15,9 @@
             <div class="alert alert-error" role="alert" th:if="${loginError != null}" th:text="${loginError}"></div>
             <div class="alert alert-success" role="status" th:if="${param.logout != null}">เลือกพนักงานสำหรับการทำงานครั้งถัดไป</div>
             <form th:action="@{/login}" method="post" class="login-form staff-picker">
-                <button class="staff-choice" type="submit" name="employee" value="reception1"><span class="staff-choice-avatar" aria-hidden="true">01</span><span><strong>reception1</strong><small>พนักงานต้อนรับ 1</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
-                <button class="staff-choice" type="submit" name="employee" value="reception2"><span class="staff-choice-avatar" aria-hidden="true">02</span><span><strong>reception2</strong><small>พนักงานต้อนรับ 2</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
-                <button class="staff-choice" type="submit" name="employee" value="reception3"><span class="staff-choice-avatar" aria-hidden="true">03</span><span><strong>reception3</strong><small>พนักงานต้อนรับ 3</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
+                <button class="staff-choice" type="submit" name="employee" value="reception1"><span class="staff-choice-avatar" aria-hidden="true">01</span><span><strong>พงศ์วสิษฐ์</strong><small>เล็กสุวรรณ</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
+                <button class="staff-choice" type="submit" name="employee" value="reception2"><span class="staff-choice-avatar" aria-hidden="true">02</span><span><strong>นรภัทร</strong><small>วัฒนะโชติ</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
+                <button class="staff-choice" type="submit" name="employee" value="reception3"><span class="staff-choice-avatar" aria-hidden="true">03</span><span><strong>ธีร์ธวัช</strong><small>ลิ้มแพร่พันธ์</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
             </form>
             <p class="login-help">ระบบจะบันทึกผู้ทำรายการตามพนักงานที่เลือก<br>เปลี่ยนคนได้จากปุ่ม “เปลี่ยนพนักงาน” มุมขวาบน</p>
         </div>

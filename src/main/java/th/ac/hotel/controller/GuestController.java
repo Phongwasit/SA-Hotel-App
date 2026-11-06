@@ -40,7 +40,8 @@ public class GuestController extends DeskSupport {
                     String first=text(input,"firstName",100,true),last=text(input,"lastName",100,true),card=text(input,"cardType",20,true),official=text(input,"officialId",50,true),phone=text(input,"phone",30,false);
                     check(NameRules.person(first),400,"ชื่อต้องมีตัวอักษรและไม่มีตัวเลข ใช้เว้นวรรค จุด ขีด หรืออัญประกาศในชื่อได้");
                     check(NameRules.person(last),400,"นามสกุลต้องมีตัวอักษรและไม่มีตัวเลข ใช้เว้นวรรค จุด ขีด หรืออัญประกาศในชื่อได้");
-                    check(List.of("NATIONAL_ID","PASSPORT","OTHER").contains(card),400,"เลือกประเภทเอกสารประจำตัวให้ถูกต้อง");
+                    check(List.of("NATIONAL_ID","PASSPORT").contains(card),400,"เลือกประเภทเอกสารประจำตัวให้ถูกต้อง");
+                    check(official.matches("[0-9]+"),400,"เลขบัตรประชาชนหรือหนังสือเดินทางต้องเป็นตัวเลข 0–9 เท่านั้น");
                     if(profileId==null) id=insert("INSERT INTO guest(title,first_name,last_name,card_type,official_id,phone) VALUES (?,?,?,?,?,?)",nullIfBlank(title),first,last,card,official,nullIfBlank(phone));
                     else {changed(jdbc.update("UPDATE guest SET title=?,first_name=?,last_name=?,card_type=?,official_id=?,phone=? WHERE guest_id=?",nullIfBlank(title),first,last,card,official,nullIfBlank(phone),profileId));id=profileId;}
                 } else {

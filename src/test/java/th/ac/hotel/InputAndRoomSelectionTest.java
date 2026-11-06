@@ -59,9 +59,9 @@ class InputAndRoomSelectionTest {
     @ParameterizedTest @ValueSource(strings={"123456","๑๒๓","１２３","John2","---"})
     void numericOrInvalidPersonalNamesCannotBeSaved(String name)throws Exception {
         int guests=jdbc.queryForObject("SELECT COUNT(*) FROM guest",Integer.class);
-        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName",name).param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","REJECT-FIRST")))
+        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName",name).param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","1000000001")))
                 .andExpect(status().isBadRequest()).andExpect(model().attributeExists("formError"));
-        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName","ชื่อจริง").param("lastName",name).param("cardType","PASSPORT").param("officialId","REJECT-LAST")))
+        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName","ชื่อจริง").param("lastName",name).param("cardType","PASSPORT").param("officialId","1000000002")))
                 .andExpect(status().isBadRequest());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM guest",Integer.class)).isEqualTo(guests);
         int bookings=jdbc.queryForObject("SELECT COUNT(*) FROM booking",Integer.class);
@@ -98,10 +98,10 @@ class InputAndRoomSelectionTest {
                 .andExpect(status().isBadRequest()).andExpect(model().attribute("selectedRooms",hasSize(1)));
     }
     @Test void editingInvalidNamesDoesNotWriteAndCancellingLegacyNumericBookerStillWorks()throws Exception {
-        var created=mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName","ชื่อเดิม").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","EDIT-VALID")))
+        var created=mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName","ชื่อเดิม").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","1000000003")))
                 .andExpect(status().is3xxRedirection()).andReturn();
         String profile=created.getResponse().getRedirectedUrl().split("profileId=")[1].split("&")[0];
-        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("profileId",profile).param("firstName","123").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","EDIT-VALID")))
+        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("profileId",profile).param("firstName","123").param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","1000000003")))
                 .andExpect(status().isBadRequest());
         assertThat(jdbc.queryForObject("SELECT first_name FROM guest WHERE guest_id=?",String.class,Integer.parseInt(profile))).isEqualTo("ชื่อเดิม");
         jdbc.update("INSERT INTO booking(booker_name,phone,staff_id,created_at) VALUES ('123','0800000000',?,NOW())",staff);
@@ -113,7 +113,7 @@ class InputAndRoomSelectionTest {
     }
     @ParameterizedTest @ValueSource(strings={"สมชาย ใจดี","Anne-Marie O’Brien","José 李","ม.ล. สายใจ"})
     void legitimateUnicodeNamesStillWork(String name)throws Exception {
-        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName",name).param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId","VALID-"+UUID.randomUUID())))
+        mvc.perform(auth(post("/profiles/save").param("recordType","GUEST").param("firstName",name).param("lastName","ทดสอบ").param("cardType","PASSPORT").param("officialId",UUID.randomUUID().toString().replaceAll("[^0-9]",""))))
                 .andExpect(status().is3xxRedirection());
     }
 }
