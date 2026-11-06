@@ -11,7 +11,7 @@
   <artifactId>hotel-frontdesk</artifactId>
   <version>0.1.0</version>
   <name>Hotel Front Desk</name>
-  <description>Local hotel front-desk application: Login and UC01-UC10.</description>
+  <description>Local hotel front-desk application: staff selection and UC01-UC10.</description>
   <properties><java.version>21</java.version></properties>
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>

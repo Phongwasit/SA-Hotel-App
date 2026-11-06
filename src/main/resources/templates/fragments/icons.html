@@ -1,0 +1,20 @@
+<!doctype html><html lang="th" xmlns:th="http://www.thymeleaf.org"><body>
+<svg th:fragment="icon(name)" class="ui-icon" width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g th:switch="${name}">
+<g th:case="'home'"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></g>
+<g th:case="'search'"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></g>
+<g th:case="'booking'"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 5h3m3 0h2"/></g>
+<g th:case="'guests'"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-16a3 3 0 0 1 0 6m3 3a5 5 0 0 1 2 4v3"/></g>
+<g th:case="'checkin'"><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5M3 12h12m-5-5 5 5-5 5"/></g>
+<g th:case="'stays'"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h9M8 12h9M8 16h6"/></g>
+<g th:case="'payment'"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20m-15 5h3"/></g>
+<g th:case="'document'"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Zm0 0v6h6M8 13h8m-8 4h6"/></g>
+<g th:case="'checkout'"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5m-1-8h12m-5-5 5 5-5 5"/></g>
+<g th:case="'rooms'"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></g>
+<g th:case="'report'"><path d="M4 3v18h17M9 16v-5m5 5V7m5 9V4"/></g>
+<g th:case="'cash'"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9h0m12 6h0"/></g>
+<g th:case="'arrow'"><path d="M4 12h16m-6-6 6 6-6 6"/></g>
+<g th:case="'clock'"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g>
+<g th:case="'check'"><path d="m5 12 4 4L19 6"/></g>
+<g th:case="'tool'"><path d="m14 7 3 3 4-4a6 6 0 0 1-8 8l-7 7a2 2 0 0 1-3-3l7-7a6 6 0 0 1 8-8Z"/></g>
+<g th:case="'clean'"><path d="m16 3-6 10m-3-2 8 5-4 6-8-5Zm12 1h4m-2-2v4"/></g>
+</g></svg></body></html>

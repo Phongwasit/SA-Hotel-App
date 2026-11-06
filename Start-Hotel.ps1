@@ -13,7 +13,7 @@ try {
     $environment = @{
         HOTEL_DB_PASSWORD=$settings.appPassword; HOTEL_DB_USER='hotel_app';
         HOTEL_DB_URL="jdbc:mysql://127.0.0.1:$($settings.port)/hotel_frontdesk?connectionTimeZone=%2B07:00&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true";
-        HOTEL_BOOTSTRAP_ENABLED='true'; HOTEL_STAFF01_PASSWORD=$settings.staff01Password; HOTEL_STAFF02_PASSWORD=$settings.staff02Password
+        HOTEL_BOOTSTRAP_ENABLED='true'
     }
     $previous = @{}
     try {
@@ -31,5 +31,5 @@ try {
     }
     if (-not $ready) { throw "Application is not ready after 60 seconds. $lastStartupError See .runtime/app.log." }
     Write-Output 'Hotel application: http://127.0.0.1:8080'
-    Write-Output 'Demo account passwords are in .runtime/demo-accounts.txt (not printed to logs).'
+    Write-Output 'Choose reception1, reception2 or reception3 to start working; no password is required.'
 } finally { Pop-Location }

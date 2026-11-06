@@ -5,3 +5,52 @@
 
 /* Grid children must shrink so the table scrolls within its card. */
 .desk-columns>*{min-width:0}
+
+
+.guest-title{border:0;padding:0;margin:0;min-width:0}
+.guest-title legend{font-size:12px;font-weight:700;margin-bottom:8px;padding:0}
+.guest-title-options{display:flex;gap:10px 16px;flex-wrap:wrap}
+.guest-title-options label{display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}
+.guest-title-options input{width:16px;height:16px;margin:0;accent-color:var(--teal)}
+
+/* Room board additions are scoped so report/folio print layouts stay intact. */
+.room-board-page [hidden]{display:none!important}
+.room-board-page .notice{margin-bottom:22px}
+.selected-room-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px}
+.room-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.room-summary-button{--state-color:var(--teal);--state-bg:#e7f4f0;border:1px solid var(--line);background:white;border-radius:9px;padding:17px 15px;text-align:left;display:flex;align-items:center;gap:12px;color:var(--ink);box-shadow:var(--shadow);min-width:0}
+.room-summary-button:hover{border-color:var(--state-color)}
+.room-summary-button.is-active{border-color:var(--state-color);box-shadow:0 0 0 1px var(--state-color);background:linear-gradient(0deg,#ffffffb8,#ffffffb8),var(--state-bg)}
+.summary-icon{background:var(--state-bg);color:var(--state-color);height:36px;width:36px;border-radius:9px;display:grid;place-items:center;flex-shrink:0}
+.summary-icon .ui-icon{width:19px;height:19px}
+.summary-label{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
+.room-summary-button strong{display:inline-block;font-size:26px;line-height:1.4;margin-right:7px;font-variant-numeric:tabular-nums}
+.room-summary-button small{font-size:10px;color:var(--muted)}
+.summary-occupied{--state-color:#476b9f;--state-bg:#eaf0fb}
+.summary-dirty{--state-color:#94621b;--state-bg:#fff1d9}
+.summary-blocked{--state-color:#a62b31;--state-bg:#fce8e8}
+.room-count-note{font-size:10px;color:var(--muted);margin:10px 0 20px}
+.room-filter-card{padding:19px 23px;display:grid;grid-template-columns:minmax(200px,1.4fr) minmax(180px,1fr) auto;gap:18px;align-items:end;margin-bottom:22px}
+.room-search-input{position:relative}
+.room-search-input>.ui-icon{position:absolute;left:12px;top:14px;width:18px;height:18px;color:var(--muted);pointer-events:none}
+.room-search-input input{padding-left:39px}
+.room-filter-card>.button{height:46px}
+.room-board-inventory{overflow:hidden}
+.room-group-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 24px 13px;border-top:1px solid var(--line);background:#fbfcfd;margin-bottom:16px}
+.room-group-heading h3{font-size:13px}
+.room-board-page .room-state-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:13px}
+.room-board-page .room-state-card{min-width:0;padding:15px;border-radius:8px;transition:box-shadow .15s,border-color .15s;position:relative}
+.room-board-page .room-state-card:hover{box-shadow:0 4px 12px #1d3b4814;border-left-color:#a3c4bf;border-right-color:#a3c4bf;border-bottom-color:#a3c4bf}
+.room-board-page .room-state-card.is-selected{outline:2px solid var(--teal);outline-offset:2px}
+.room-tile-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.room-tile-heading .ui-icon{width:16px;height:16px;color:var(--muted)}
+.room-type-label{font-size:11px;color:var(--muted)}
+.room-primary-state{font-size:11px;font-weight:700;margin:10px 0 8px;color:var(--teal)}
+.room-occupied .room-primary-state{color:#476b9f}.room-dirty .room-primary-state{color:#94621b}.room-blocked .room-primary-state{color:#a62b31}
+.room-state-details{display:flex;align-items:flex-start;flex-wrap:wrap;gap:3px}
+.room-state-details .condition{display:inline-block;white-space:normal;margin:0;font-size:9px;line-height:1.6}
+.room-board-page .room-condition-reason{margin-top:10px;border-top:1px solid #20374412;padding-top:8px;font-size:10px;white-space:pre-line}
+.room-board-empty .button{margin-top:20px}
+@media(max-width:1450px){.room-summary-button{padding:15px 12px;gap:9px}.room-summary-button .summary-icon{width:30px;height:30px}.summary-label{font-size:10px}}
+@media(max-width:1200px){.room-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.room-filter-card{grid-template-columns:minmax(140px,1fr) minmax(140px,1fr) auto}}
+@media(max-width:700px){.room-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.room-summary-button:first-child{grid-column:1/-1}.room-summary-button:first-child>span:last-child{display:flex;align-items:center;gap:10px}.room-summary-button:first-child .summary-label{margin-right:auto}.room-filter-card{grid-template-columns:1fr 1fr;padding:17px;gap:15px 12px}.room-filter-card>.button{grid-column:1/-1;min-height:40px;height:auto}.room-board-page .room-state-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 16px 20px;gap:12px}.room-group-heading{padding:14px 17px}.room-board-page .room-state-card{padding:12px}.room-tile-heading strong{font-size:23px}.room-count-note{font-size:10px}.selected-room-heading{gap:12px}.selected-room-heading .text-link{white-space:nowrap}}

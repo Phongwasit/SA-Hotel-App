@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="th" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>เข้าสู่ระบบ | Hotel Front Desk</title><link rel="stylesheet" th:href="@{/css/hotel.css}"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>เลือกพนักงาน | Hotel Front Desk</title><link rel="stylesheet" th:href="@{/css/hotel.css(v='20261107-staff')}"></head>
 <body class="login-page">
 <main class="login-layout">
     <section class="login-brand-panel" aria-label="ระบบจัดการโรงแรม">
@@ -11,15 +11,15 @@
     </section>
     <section class="login-form-panel">
         <div class="login-form-container">
-            <span class="section-tag">พนักงานต้อนรับ</span><h2>เข้าสู่ระบบ</h2><p class="muted login-description">ใช้บัญชีพนักงานของคุณเพื่อเริ่มทำงาน</p>
+            <span class="section-tag">พนักงานต้อนรับ</span><h2>เลือกพนักงาน</h2><p class="muted login-description">เลือกชื่อของคุณเพื่อเริ่มทำงานได้เลย</p>
             <div class="alert alert-error" role="alert" th:if="${loginError != null}" th:text="${loginError}"></div>
-            <div class="alert alert-success" role="status" th:if="${param.logout != null}">ออกจากระบบเรียบร้อยแล้ว</div>
-            <form th:action="@{/login}" method="post" class="login-form">
-                <div class="field"><label for="username">ชื่อผู้ใช้</label><input id="username" name="username" type="text" th:value="${username}" autocomplete="username" maxlength="50" placeholder="ชื่อบัญชีพนักงาน" required autofocus></div>
-                <div class="field"><label for="password">รหัสผ่าน</label><input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" placeholder="กรอกรหัสผ่าน" required></div>
-                <button class="button button-primary login-submit" type="submit">เข้าสู่ระบบ <span aria-hidden="true">→</span></button>
+            <div class="alert alert-success" role="status" th:if="${param.logout != null}">เลือกพนักงานสำหรับการทำงานครั้งถัดไป</div>
+            <form th:action="@{/login}" method="post" class="login-form staff-picker">
+                <button class="staff-choice" type="submit" name="employee" value="reception1"><span class="staff-choice-avatar" aria-hidden="true">01</span><span><strong>reception1</strong><small>พนักงานต้อนรับ 1</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
+                <button class="staff-choice" type="submit" name="employee" value="reception2"><span class="staff-choice-avatar" aria-hidden="true">02</span><span><strong>reception2</strong><small>พนักงานต้อนรับ 2</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
+                <button class="staff-choice" type="submit" name="employee" value="reception3"><span class="staff-choice-avatar" aria-hidden="true">03</span><span><strong>reception3</strong><small>พนักงานต้อนรับ 3</small></span><span class="staff-choice-arrow" aria-hidden="true">→</span></button>
             </form>
-            <p class="login-help">ใช้บัญชีที่เตรียมไว้ให้แล้ว หากเข้าใช้งานไม่ได้<br>ให้ตรวจสอบชื่อผู้ใช้และรหัสผ่านของคุณอีกครั้ง</p>
+            <p class="login-help">ระบบจะบันทึกผู้ทำรายการตามพนักงานที่เลือก<br>เปลี่ยนคนได้จากปุ่ม “เปลี่ยนพนักงาน” มุมขวาบน</p>
         </div>
         <span class="login-footer">Hotel Front Desk</span>
     </section>

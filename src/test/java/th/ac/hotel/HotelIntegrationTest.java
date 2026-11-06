@@ -70,36 +70,70 @@ class HotelIntegrationTest {
     }
 
     @Test
-    void pagesRequireLoginAndStateChangingRequestsRequireCsrf() throws Exception {
+    void pagesRequireStaffSelectionAndStateChangingRequestsRequireCsrf() throws Exception {
         mvc.perform(get("/rooms")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("http://localhost/login"));
-        mvc.perform(post("/login").param("username", username).param("password", PASSWORD)).andExpect(status().isForbidden());
+        mvc.perform(post("/login").param("employee", "reception1")).andExpect(status().isForbidden());
         mvc.perform(asStaff(post("/rooms/search"))).andExpect(status().isForbidden());
     }
 
-    @Test
-    void loginUsesStoredHashRotatesSessionAndLogoutRemovesAccess() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"reception1,reception01", "reception2,reception02", "reception3,reception03"})
+    void selectingStaffRotatesSessionAndKeepsCorrectBookingAuthor(String choice, String accountName) throws Exception {
+        new th.ac.hotel.config.EmployeeBootstrap(jdbc, encoder).run(null);
+        int employeeId = jdbc.queryForObject("SELECT employee_id FROM employee WHERE username=?", Integer.class, accountName);
         MockHttpSession original = new MockHttpSession();
         String originalId = original.getId();
-        var result = mvc.perform(post("/login").session(original).with(csrf()).param("username", username).param("password", PASSWORD))
+        var result = mvc.perform(post("/login").session(original).with(csrf()).param("employee", choice))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/")).andReturn();
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
         assertThat(session.getId()).isNotEqualTo(originalId);
-        assertThat(session.getAttribute("employeeId")).isEqualTo(staffId);
-        mvc.perform(get("/").session(session)).andExpect(status().isOk()).andExpect(content().string(containsString(username)))
+        assertThat(session.getAttribute("employeeId")).isEqualTo(employeeId);
+        mvc.perform(get("/").session(session)).andExpect(status().isOk()).andExpect(content().string(containsString(choice)))
                 .andExpect(content().string(not(containsString("password_hash"))));
+        mvc.perform(get("/login").session(session)).andExpect(redirectedUrl("/"));
+        int roomId = jdbc.queryForObject("SELECT room_id FROM room WHERE room_number='2401'", Integer.class);
+        var saved = mvc.perform(post("/bookings/save").session(session).with(csrf()).param("action", "CREATE")
+                        .param("bookerName", "Staff selection attribution").param("phone", "0800000000")
+                        .param("roomIds", String.valueOf(roomId)).param("itemIds", "")
+                        .param("checkInDates", "2037-01-10").param("checkOutDates", "2037-01-11"))
+                .andExpect(status().is3xxRedirection()).andReturn();
+        int bookingId = Integer.parseInt(saved.getResponse().getRedirectedUrl().split("[/?]")[2]);
+        assertThat(jdbc.queryForObject("SELECT staff_id FROM booking WHERE booking_id=?", Integer.class, bookingId)).isEqualTo(employeeId);
         mvc.perform(post("/logout").session(session).with(csrf())).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login?logout"));
         assertThat(session.isInvalid()).isTrue();
         mvc.perform(get("/rooms")).andExpect(status().is3xxRedirection());
     }
 
     @Test
-    void invalidCredentialsAndSqlInjectionDoNotAuthenticate() throws Exception {
-        for (String name : List.of(username, "not-an-account", "' OR '1'='1")) {
-            var result = mvc.perform(post("/login").with(csrf()).param("username", name).param("password", "wrong-password"))
-                    .andExpect(status().isOk()).andExpect(model().attribute("loginError", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง")).andReturn();
+    void invalidStaffSelectionAndSqlInjectionDoNotCreateIdentity() throws Exception {
+        for (String name : List.of("", username, "reception4", "reception01", "' OR '1'='1")) {
+            var result = mvc.perform(post("/login").with(csrf()).param("employee", name))
+                    .andExpect(status().isOk()).andExpect(model().attribute("loginError", "กรุณาเลือกพนักงานจากรายการ")).andReturn();
             var session = result.getRequest().getSession(false);
             assertThat(session == null || session.getAttribute("employeeId") == null).isTrue();
         }
+    }
+
+    @Test
+    void selectionPageNeedsNoPasswordAndBootstrapPreservesExistingAccounts() throws Exception {
+        var bootstrap = new th.ac.hotel.config.EmployeeBootstrap(jdbc, encoder);
+        bootstrap.run(null);
+        var before = jdbc.queryForList("SELECT employee_id,username,password_hash FROM employee WHERE username IN ('reception01','reception02','reception03') ORDER BY username");
+        bootstrap.run(null);
+        assertThat(jdbc.queryForList("SELECT employee_id,username,password_hash FROM employee WHERE username IN ('reception01','reception02','reception03') ORDER BY username")).isEqualTo(before).hasSize(3);
+        mvc.perform(get("/login")).andExpect(status().isOk())
+                .andExpect(content().string(containsString("เลือกพนักงาน")))
+                .andExpect(content().string(containsString("reception3")))
+                .andExpect(content().string(not(containsString("type=\"password\""))));
+    }
+
+    @Test
+    void failedStaffLookupNeverCreatesIdentity() throws Exception {
+        doThrow(new CannotGetJdbcConnectionException("offline fixture")).when(jdbc).queryForList(anyString(), eq("reception01"));
+        var result = mvc.perform(post("/login").with(csrf()).param("employee", "reception1"))
+                .andExpect(status().isServiceUnavailable()).andReturn();
+        var session = result.getRequest().getSession(false);
+        assertThat(session == null || session.getAttribute("employeeId") == null).isTrue();
     }
 
     @Test
@@ -203,7 +237,7 @@ class HotelIntegrationTest {
     @Test
     void actualSchemaHasSixteenBusinessTablesEightyThreeFieldsAndTwentyTwoForeignKeys() {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name <> 'flyway_schema_history'", Integer.class)).isEqualTo(16);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name <> 'flyway_schema_history'", Integer.class)).isEqualTo(83);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name <> 'flyway_schema_history'", Integer.class)).isEqualTo(84);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE()", Integer.class)).isEqualTo(22);
     }
 

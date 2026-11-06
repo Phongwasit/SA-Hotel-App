@@ -142,6 +142,22 @@ class BookingIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT action FROM booking_history WHERE booking_id=?",String.class,id)).isEqualTo("CANCEL");
         mvc.perform(cancel(id)).andExpect(status().isConflict());
         assertThat(count("booking_history",id)).isEqualTo(1);
+        String reference="BK"+String.format("%06d",id);
+        mvc.perform(asStaff(get("/bookings").param("searchText",reference)))
+                .andExpect(status().isOk()).andExpect(model().attribute("includeCancelled",false))
+                .andExpect(model().attribute("bookings",hasSize(0)));
+        mvc.perform(asStaff(get("/bookings").param("searchText",reference).param("includeCancelled","true")))
+                .andExpect(status().isOk()).andExpect(model().attribute("includeCancelled",true))
+                .andExpect(model().attribute("bookings",hasSize(1)));
+        mvc.perform(asStaff(get("/bookings/"+id))).andExpect(status().isOk());
+        assertThat(count("booking_item",id)).isEqualTo(2);
+        assertThat(count("booking_history",id)).isEqualTo(1);
+    }
+    @Test void checkedInBookingsRemainVisibleWithoutTheHistoryOption() throws Exception {
+        int id=createBooking("2401");
+        jdbc.update("UPDATE booking_item SET status='CHECKED_IN' WHERE booking_id=?",id);
+        mvc.perform(asStaff(get("/bookings").param("searchText","BK"+String.format("%06d",id))))
+                .andExpect(status().isOk()).andExpect(model().attribute("bookings",hasSize(1)));
     }
     @Test void reducingAllRoomsIsRejectedInFavorOfExplicitCancelAll() throws Exception {
         int id=createBooking("2401");

@@ -20,7 +20,7 @@ public abstract class DeskSupport {
     protected final Clock clock;
     protected static final String STAY_VIEW = """
         SELECT s.*,r.room_number,r.type_name,r.occupancy,r.cleanliness,r.usability,
-               g.first_name,g.last_name,g.official_id,g.card_type,g.phone,
+               g.title,g.first_name,g.last_name,CONCAT_WS(' ',g.title,g.first_name,g.last_name) AS guest_name,g.official_id,g.card_type,g.phone,
                dr.recipient_name AS default_recipient_name
         FROM stay s JOIN room r ON r.room_id=s.room_id JOIN guest g ON g.guest_id=s.guest_id
         LEFT JOIN document_recipient dr ON dr.recipient_id=s.default_recipient_id
@@ -49,7 +49,7 @@ public abstract class DeskSupport {
     }
     protected List<StayAccount> findAccounts(String term,boolean activeOnly) {
         String pattern="%"+term.strip()+"%";
-        var ids=jdbc.queryForList("SELECT s.stay_id FROM stay s JOIN room r ON r.room_id=s.room_id JOIN guest g ON g.guest_id=s.guest_id WHERE "+(activeOnly?"s.status='ACTIVE' AND ":"")+"(r.room_number LIKE ? OR CAST(s.stay_id AS CHAR)=? OR g.first_name LIKE ? OR g.last_name LIKE ?) ORDER BY s.stay_id DESC",Integer.class,pattern,term.strip(),pattern,pattern);
+        var ids=jdbc.queryForList("SELECT s.stay_id FROM stay s JOIN room r ON r.room_id=s.room_id JOIN guest g ON g.guest_id=s.guest_id WHERE "+(activeOnly?"s.status='ACTIVE' AND ":"")+"(r.room_number LIKE ? OR CAST(s.stay_id AS CHAR)=? OR CONCAT_WS(' ',g.title,g.first_name,g.last_name) LIKE ? OR g.last_name LIKE ?) ORDER BY s.stay_id DESC",Integer.class,pattern,term.strip(),pattern,pattern);
         return ids.stream().map(this::account).toList();
     }
     /** Same order across payment, documents and checkout: sorted rooms, then sorted stays. */

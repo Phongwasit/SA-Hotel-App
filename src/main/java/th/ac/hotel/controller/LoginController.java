@@ -11,7 +11,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,26 +20,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import th.ac.hotel.security.StaffPrincipal;
 
 import java.util.List;
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Controller
 public class LoginController {
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
-    // queryAUTH_1: parameters remain bound data, never concatenated into SQL.
+    // Keep existing employee IDs and account names for historical records.
+    private static final Map<String, String> STAFF_CHOICES = Map.of(
+            "reception1", "reception01", "reception2", "reception02", "reception3", "reception03");
     static final String QUERY_AUTH_1 = """
-            SELECT employee_id,first_name,last_name,username,password_hash
+            SELECT employee_id,first_name,last_name,username
             FROM employee WHERE username=?
             """;
     private final JdbcTemplate jdbcTemplate;
-    private final PasswordEncoder passwordEncoder;
     private final SecurityContextRepository contexts;
-    private final String dummyHash;
 
-    public LoginController(JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder, SecurityContextRepository contexts) {
+    public LoginController(JdbcTemplate jdbcTemplate, SecurityContextRepository contexts) {
         this.jdbcTemplate = jdbcTemplate;
-        this.passwordEncoder = passwordEncoder;
         this.contexts = contexts;
-        this.dummyHash = passwordEncoder.encode("no-such-account");
     }
 
     @GetMapping("/login")
@@ -49,21 +46,17 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestParam(defaultValue = "") String username,
-                        @RequestParam(defaultValue = "") String password,
-                        HttpServletRequest request, HttpServletResponse response, Model model) {
-        String name = username.strip();
-        model.addAttribute("username", name.length() <= 50 ? name : "");
-        if (name.isEmpty() || name.length() > 50 || password.isEmpty() || password.getBytes(StandardCharsets.UTF_8).length > 72) {
-            model.addAttribute("loginError", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    public String selectStaff(@RequestParam(defaultValue = "") String employee,
+                              HttpServletRequest request, HttpServletResponse response, Model model) {
+        String username = STAFF_CHOICES.get(employee);
+        if (username == null) {
+            model.addAttribute("loginError", "กรุณาเลือกพนักงานจากรายการ");
             return "login";
         }
         try {
-            var accounts = jdbcTemplate.queryForList(QUERY_AUTH_1, name);
-            String hash = accounts.isEmpty() ? dummyHash : (String) accounts.getFirst().get("password_hash");
-            boolean matches = passwordEncoder.matches(password, hash);
-            if (accounts.size() != 1 || !matches) {
-                model.addAttribute("loginError", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+            var accounts = jdbcTemplate.queryForList(QUERY_AUTH_1, username);
+            if (accounts.size() != 1) {
+                model.addAttribute("loginError", "ไม่พบข้อมูลพนักงานที่เลือก กรุณาเปิดโปรแกรมใหม่แล้วลองอีกครั้ง");
                 return "login";
             }
             var account = accounts.getFirst();
@@ -79,7 +72,7 @@ public class LoginController {
             request.getSession().setAttribute("employeeId", staff.employeeId());
             return "redirect:/";
         } catch (DataAccessException e) {
-            log.warn("Staff login database lookup failed: {}", e.getClass().getSimpleName());
+            log.warn("Staff selection database lookup failed: {}", e.getClass().getSimpleName());
             response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
             model.addAttribute("loginError", "เชื่อมต่อฐานข้อมูลไม่ได้ กรุณาตรวจว่าฐานข้อมูลเปิดอยู่แล้วลองอีกครั้ง");
             return "login";

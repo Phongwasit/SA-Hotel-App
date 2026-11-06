@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 public class StayReportController extends DeskSupport {
     public StayReportController(JdbcTemplate jdbc,PlatformTransactionManager manager,Clock clock){super(jdbc,manager,clock);}
     private static final String REPORT="""
-        SELECT s.stay_id,r.room_number,g.first_name,g.last_name,s.check_in_date,
+        SELECT s.stay_id,r.room_number,g.title,g.first_name,g.last_name,CONCAT_WS(' ',g.title,g.first_name,g.last_name) AS guest_name,s.check_in_date,
           s.expected_check_out_date,s.actual_check_in,s.actual_check_out,
           CASE WHEN s.booking_item_id IS NULL THEN 'WALK_IN' ELSE 'RESERVED' END AS arrival_type
         FROM stay s JOIN room r ON r.room_id=s.room_id JOIN guest g ON g.guest_id=s.guest_id

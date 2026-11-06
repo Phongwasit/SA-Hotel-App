@@ -21,7 +21,7 @@ public class CheckInController extends DeskSupport {
     public String form(@RequestParam(required=false) Integer bookingId,Model model) {
         var collection=new RoomCollection();collection.storeRoomStates(loadRooms());
         model.addAttribute("activePage","checkin");model.addAttribute("rooms",collection.rooms());
-        model.addAttribute("guests",jdbc.queryForList("SELECT * FROM guest ORDER BY guest_id DESC"));
+        model.addAttribute("guests",jdbc.queryForList("SELECT guest_id,title,first_name,last_name,official_id,CONCAT_WS(' ',title,first_name,last_name) AS guest_name FROM guest ORDER BY guest_id DESC"));
         model.addAttribute("recipients",jdbc.queryForList("SELECT * FROM document_recipient ORDER BY recipient_name"));
         var booked=bookingId==null?List.<Map<String,Object>>of():jdbc.queryForList("SELECT bi.*,r.room_number FROM booking_item bi JOIN room r ON r.room_id=bi.room_id WHERE bi.booking_id=? AND bi.status='BOOKED' ORDER BY r.room_number",bookingId);
         model.addAttribute("bookedItems",booked);

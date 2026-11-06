@@ -59,10 +59,15 @@ public class BookingController {
     }
 
     @GetMapping("/bookings")
-    public String findBookings(@RequestParam(defaultValue="") String searchText, Model model, HttpServletResponse response) {
+    public String findBookings(@RequestParam(defaultValue="") String searchText,
+                               @RequestParam(defaultValue="false") boolean includeCancelled,
+                               Model model, HttpServletResponse response) {
         RoomCollection collection = loadBookingData(model, response);
         model.addAttribute("searchText", searchText);
-        if (collection != null) model.addAttribute("bookings", collection.findBookings(searchText));
+        model.addAttribute("includeCancelled", includeCancelled);
+        if (collection != null) model.addAttribute("bookings", collection.findBookings(searchText).stream()
+                .filter(booking -> includeCancelled || booking.bookedCount() > 0 || booking.hasCheckedIn())
+                .toList());
         return "bookings";
     }
 
