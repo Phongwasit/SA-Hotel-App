@@ -102,3 +102,8 @@ UC03–UC10 ยังไม่พัฒนา ผลรอบนี้ไม่�
 ตรวจ fixture จริงก่อน cleanup: สอง stay/สี่คืน 3,200 บาท เงินรับสองครั้ง สี่ allocation เงินสด 1,600 บาท ใบเสร็จหนึ่งใบเชื่อมสอง stay/สอง payment หลังเช็คเอาต์ทำความสะอาดทั้งสองห้องกลับพร้อม และลบเฉพาะข้อมูลสมมติที่ยืนยันรหัส/ชื่อของตัวทดสอบแล้วจาก hotel_frontdesk_test ฐานหลักยังเป็น 41 ห้อง/3 ประเภท/2 บัญชี ไม่มี guest/booking/stay/payment/receipt สมมติ รหัสผ่านและ local-settings ตรง hash ก่อนย้าย
 
 แบบ Word/Excel/drawio และไฟล์อ้างอิงเดิม 35 ไฟล์ไม่ถูกเขียนทับในรอบพัฒนา เอกสารต้องประสานตามโค้ดก่อนรวมเล่ม โดยเฉพาะ H23 UC02, ชื่อคลาส/หน้าจอ/SQL/locking ที่ใช้จริง และรูปผลทดสอบ เพื่อนยังไม่ได้ถูกนับว่าตรวจผ่าน R01–R24 และ R19 ประเภทห้องจริงสามประเภทเทียบเกณฑ์ห้าตัวอย่างยังเปิดอยู่
+
+
+## 2026-11-07 Sequence operation alignment
+
+Refactored UC01–UC10 into the controller/collection operations named by the approved sequence/class-detail pages; added real UI model/navigation boundaries. Original routes, schema, SQL migrations, fixed-rate/whole-night payment/cancellation policies and prior110tests retained. Added method-owner contract plus4collection-state tests (115passed), compiled invocation-order checks across17paths, and named native submit/current-preview print actions. Cash details now use3batch reads with the existing CASH-only association rules. All16main/testbusiness row hashes match pre-task snapshots; no business writes from browser checks. See SEQUENCE_ALIGNMENT.md.

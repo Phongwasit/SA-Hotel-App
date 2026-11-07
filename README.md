@@ -59,7 +59,7 @@ UC02 เก็บภาพก่อนเปลี่ยนแปลงทั้
 
 ## ฐานข้อมูลและการเปิดซ้ำ
 
-- มีตารางธุรกิจตามแบบ **16 ตาราง / 83 ฟิลด์ / 22 ความสัมพันธ์ FK** พร้อม 41 ห้องจริง
+- มีตารางธุรกิจตามแบบ **16 ตาราง / 84 ฟิลด์ / 22 ความสัมพันธ์ FK** พร้อม 41 ห้องจริง
 - `flyway_schema_history` เป็นตารางเทคนิคของตัวจัดการ migration เพิ่มจากตารางธุรกิจ ไม่ใช่ entity หรือ UC ใหม่
 - `V1` สร้างโครงสร้าง และ `V2` ใส่ประเภทกับเลขห้อง เมื่อเปิดซ้ำ Flyway ตรวจเวอร์ชัน ไม่ล้างฐานหรือเติมห้องซ้ำ
 - ฐานใช้งานชื่อ `hotel_frontdesk` ส่วนทดสอบใช้ `hotel_frontdesk_test` คนละฐานกัน
@@ -138,4 +138,17 @@ UPDATE employee SET first_name='พงศ์วสิษฐ์', last_name='เ�
 UPDATE employee SET first_name='นรภัทร', last_name='วัฒนะโชติ' WHERE username='reception02';
 UPDATE employee SET first_name='ธีร์ธวัช', last_name='ลิ้มแพร่พันธ์' WHERE username='reception03';
 COMMIT;
+```
+
+
+## Sequence alignment update 2026-11-07
+
+UC01–UC10 now use the operations named in the approved sequence/class-detail diagrams, including controller, collection and UI responsibilities. HTTP endpoints and business rules remain unchanged. See [SEQUENCE_ALIGNMENT.md](docs/SEQUENCE_ALIGNMENT.md) for the operation map and Spring MVC parameter binding.
+
+Validation: **115 tests passed** (110 existing tests plus 5 new contract/collection tests), **117 operations across 21 classes**, and **17 compiled invocation-order paths**. Chrome checks passed all ten UC screens, mixed-room-type selection, native form submission, current-preview printing, 10-second room polling with draft preservation, mobile layout and search with JavaScript disabled. These checks did not change business records.
+
+After compiling, check the method and call-order contract with:
+
+```powershell
+py -3.12 tools/verify_sequence_alignment.py
 ```

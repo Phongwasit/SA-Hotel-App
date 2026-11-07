@@ -1,5 +1,7 @@
 package th.ac.hotel.controller;
 
+import th.ac.hotel.ui.DocumentUI;
+
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.util.*;
@@ -21,19 +23,89 @@ public class DocumentController extends DeskSupport {
         model.addAttribute("references",jdbc.queryForList("SELECT rr.*,dr.recipient_name FROM receipt_reference rr JOIN document_recipient dr ON dr.recipient_id=rr.recipient_id ORDER BY reference_id DESC"));
         model.addAttribute("today",now().toLocalDate());
         if(!input.getOrDefault("stayIds",List.of()).isEmpty()||!value(input,"referenceId").isEmpty()) {
-            DocumentView view=transaction.execute(tx->load(input,false));
-            model.addAttribute("document",view);model.addAttribute("mode","REFERENCE".equals(value(input,"mode"))?"REFERENCE":"FOLIO");model.addAttribute("generatedAt",now());
+            DocumentView view=transaction.execute(tx->loadDocumentContext(input,false));
+
+            String mode="REFERENCE".equals(value(input,"mode"))?"REFERENCE":"FOLIO";
+            DocumentUI.displayDocumentContext(view,mode,now(),model);
+            if("FOLIO".equals(mode))DocumentUI.displayFolioPreview(createFolioPreview(view),model);
+            else DocumentUI.displayReceiptWritingDetails(view,model);
         }
         return "documents";
     }
     @PostMapping("/documents/save")
-    public String save(@RequestParam MultiValueMap<String,String> input) {
+    public String saveReceiptReference(@RequestParam MultiValueMap<String,String> input) {
+        try {
+            ReceiptDraft draft=validateReceiptReference(input,null);
+            ReceiptResult result=makeReceiptResult(persistReceiptReference(input,draft));
+            return DocumentUI.displayReceiptResult(result);
+        } catch(DeskProblem problem) {throw makeValidationResult(problem);}
+    }
+    private DocumentView getDocumentData(MultiValueMap<String,String> input) {
+
+        Integer reference=optionalId(value(input,"referenceId"));
+        Map<String,Object> existing=reference==null?Map.of():one("SELECT * FROM receipt_reference WHERE reference_id=?",reference);
+        List<String> selected=input.getOrDefault("stayIds",List.of());
+        List<Integer> stays=selected.isEmpty()&&reference!=null?jdbc.queryForList("SELECT stay_id FROM receipt_stay WHERE reference_id=? ORDER BY stay_id",Integer.class,reference):ids(selected);
+        check(!stays.isEmpty(),400,"เลือกการเข้าพักที่ต้องการออกเอกสาร");
+        lockAccounts(stays);
+        var accounts=stays.stream().map(this::account).toList();
+        Integer recipient=optionalId(value(input,"recipientId"));String source="เลือกผู้รับสำหรับเอกสารนี้";
+        if(recipient==null&&reference!=null) {recipient=number(existing,"recipient_id");source="ผู้รับที่บันทึกกับใบเสร็จเดิม";}
+        if(recipient==null) {
+            Set<Object> defaults=new HashSet<>();accounts.forEach(a->defaults.add(a.stay().get("default_recipient_id")));
+            check(defaults.size()==1&&!defaults.contains(null),400,"ผู้รับเริ่มต้นของแต่ละห้องไม่ตรงกันหรือยังว่าง กรุณาเลือกผู้รับเอกสารหนึ่งราย");
+            recipient=((Number)defaults.iterator().next()).intValue();source="ผู้รับเริ่มต้นเดียวกันของทุกห้องที่เลือก";
+        }
+        var profile=one("SELECT * FROM document_recipient WHERE recipient_id=? FOR UPDATE",recipient);
+        List<Integer> paymentIds=accounts.stream().flatMap(a->a.allocations().stream()).map(a->number(a,"payment_id")).distinct().sorted().toList();
+        List<Map<String,Object>> payments=new ArrayList<>();
+        for(int id:paymentIds) {
+            var payment=new HashMap<>(one("SELECT * FROM payment WHERE payment_id=?",id));
+            payment.put("methods",jdbc.queryForList("SELECT method,amount FROM payment_method WHERE payment_id=? ORDER BY payment_method_id",id));
+            payment.put("allocated_amount",accounts.stream().flatMap(a->a.allocations().stream()).filter(a->number(a,"payment_id")==id).map(a->(BigDecimal)a.get("amount")).reduce(BigDecimal.ZERO,BigDecimal::add));payments.add(payment);
+        }
+        return mapToDocumentData(new DocumentRecords(reference,recipient,profile,source,accounts,stays,paymentIds,payments,existing));
+        }
+    public record DocumentView(Integer referenceId,int recipientId,Map<String,Object> recipient,String recipientSource,List<StayAccount> accounts,List<Integer> stayIds,List<Integer> paymentIds,List<Map<String,Object>> payments,Map<String,Object> reference,BigDecimal total) {}
+
+    private DocumentView loadDocumentContext(MultiValueMap<String,String> input,boolean saving) {
+        DocumentView documentData=getDocumentData(input);
+        return checkDocumentContext(value(input,"mode"),documentData,saving);
+    }
+    private DocumentView mapToDocumentData(DocumentRecords records) {
+        return new DocumentView(records.referenceId(),records.recipientId(),records.recipient(),records.recipientSource(),records.accounts(),records.stayIds(),records.paymentIds(),records.payments(),records.reference(),records.accounts().stream().map(StayAccount::total).reduce(BigDecimal.ZERO,BigDecimal::add));
+    }
+    private DocumentView checkDocumentContext(String mode,DocumentView documentData,boolean saving) {
+        for(var a:documentData.accounts()) {
+            check(a.settled(),409,"การพัก #"+a.id()+" ยังชำระค่าห้องไม่ครบ จัดการรับเงินก่อนออกเอกสาร");
+            if(saving)check(a.receipts().stream().noneMatch(r->documentData.referenceId()==null||number(r,"reference_id")!=documentData.referenceId()),409,"การพักนี้มีใบเสร็จสุดท้ายแล้ว ให้เปิดแก้ไขใบเดิม");
+        }
+        check(documentData.recipient().get("address")!=null&&!documentData.recipient().get("address").toString().isBlank(),400,"เติมที่อยู่ผู้รับเอกสารใน UC03 ก่อนออกเอกสาร");
+        if("ORGANIZATION".equals(documentData.recipient().get("recipient_type")))check(documentData.recipient().get("tax_id")!=null&&!documentData.recipient().get("tax_id").toString().isBlank(),400,"เติมเลขผู้เสียภาษีของหน่วยงานก่อนออกเอกสาร");
+
+        return documentData;
+    }
+    private FolioPreview createFolioPreview(DocumentView documentData) {return buildFolio(documentData);}
+    private FolioPreview buildFolio(DocumentView documentData) {
+        return new FolioPreview(documentData,now(),documentData.accounts().stream().map(StayAccount::total).reduce(BigDecimal.ZERO,BigDecimal::add));
+    }
+    private ReceiptDraft validateReceiptReference(MultiValueMap<String,String> input,DocumentView documentData) {
+
         String book=text(input,"bookNumber",30,true),receipt=text(input,"receiptNumber",30,true);
         var receiptDate=parseDate(value(input,"receiptDate"));check(!receiptDate.isAfter(now().toLocalDate()),400,"วันที่ใบเสร็จต้องไม่อยู่ในอนาคต");
-        int reference=Objects.requireNonNull(transaction.execute(tx -> {
-            DocumentView view=load(input,true);
+
+        if(documentData!=null) {
             var requested=input.getOrDefault("paymentIds",List.of());
-            check(new HashSet<>(ids(requested)).equals(new HashSet<>(view.paymentIds())),400,"เงินรับที่เชื่อมต้องครบและสัมพันธ์กับคืนพักที่เลือก กรุณาโหลดข้อมูลใหม่");
+            check(new HashSet<>(ids(requested)).equals(new HashSet<>(documentData.paymentIds())),400,"เงินรับที่เชื่อมต้องครบและสัมพันธ์กับคืนพักที่เลือก กรุณาโหลดข้อมูลใหม่");
+        }
+        return new ReceiptDraft(book,receipt,receiptDate);
+    }
+    private ReceiptReference persistReceiptReference(MultiValueMap<String,String> input,ReceiptDraft draft) {
+        String book=draft.bookNumber(),receipt=draft.receiptNumber();var receiptDate=draft.receiptDate();
+        return Objects.requireNonNull(transaction.execute(tx->{
+
+            DocumentView view=loadDocumentContext(input,true);
+            validateReceiptReference(input,view);
             int id;
             if(view.referenceId()==null) id=insert("INSERT INTO receipt_reference(recipient_id,book_number,receipt_number,receipt_date) VALUES (?,?,?,?)",view.recipientId(),book,receipt,receiptDate);
             else {
@@ -48,42 +120,24 @@ public class DocumentController extends DeskSupport {
             for(int old:oldPayments)if(!view.paymentIds().contains(old))jdbc.update("DELETE FROM receipt_payment WHERE reference_id=? AND payment_id=?",id,old);
             for(int payment:view.paymentIds())if(!oldPayments.contains(payment))changed(jdbc.update("INSERT INTO receipt_payment(reference_id,payment_id) VALUES (?,?)",id,payment));
             var saved=one("SELECT * FROM receipt_reference WHERE reference_id=?",id);
-            check(number(saved,"recipient_id")==view.recipientId(),409,"อ่านผู้รับใบเสร็จกลับไม่สำเร็จ");
-            check(jdbc.queryForList("SELECT stay_id FROM receipt_stay WHERE reference_id=?",Integer.class,id).size()==view.stayIds().size(),409,"อ่านรายการพักที่เชื่อมกลับไม่ครบ");
-            check(jdbc.queryForList("SELECT payment_id FROM receipt_payment WHERE reference_id=?",Integer.class,id).size()==view.paymentIds().size(),409,"อ่านเงินรับที่เชื่อมกลับไม่ครบ");
-            return id;
-        }));return "redirect:/documents?referenceId="+reference+"&mode=REFERENCE&saved=true";
+            var savedStays=jdbc.queryForList("SELECT stay_id FROM receipt_stay WHERE reference_id=?",Integer.class,id);
+            var savedPayments=jdbc.queryForList("SELECT payment_id FROM receipt_payment WHERE reference_id=?",Integer.class,id);
+            return mapToReceiptReference(saved,savedStays,savedPayments,view);
+
+        }));
     }
-    private DocumentView load(MultiValueMap<String,String> input,boolean saving) {
-        Integer reference=optionalId(value(input,"referenceId"));
-        Map<String,Object> existing=reference==null?Map.of():one("SELECT * FROM receipt_reference WHERE reference_id=?",reference);
-        List<String> selected=input.getOrDefault("stayIds",List.of());
-        List<Integer> stays=selected.isEmpty()&&reference!=null?jdbc.queryForList("SELECT stay_id FROM receipt_stay WHERE reference_id=? ORDER BY stay_id",Integer.class,reference):ids(selected);
-        check(!stays.isEmpty(),400,"เลือกการเข้าพักที่ต้องการออกเอกสาร");
-        lockAccounts(stays);
-        var accounts=stays.stream().map(this::account).toList();
-        for(var a:accounts) {
-            check(a.settled(),409,"การพัก #"+a.id()+" ยังชำระค่าห้องไม่ครบ จัดการรับเงินก่อนออกเอกสาร");
-            if(saving)check(a.receipts().stream().noneMatch(r->reference==null||number(r,"reference_id")!=reference),409,"การพักนี้มีใบเสร็จสุดท้ายแล้ว ให้เปิดแก้ไขใบเดิม");
-        }
-        Integer recipient=optionalId(value(input,"recipientId"));String source="เลือกผู้รับสำหรับเอกสารนี้";
-        if(recipient==null&&reference!=null) {recipient=number(existing,"recipient_id");source="ผู้รับที่บันทึกกับใบเสร็จเดิม";}
-        if(recipient==null) {
-            Set<Object> defaults=new HashSet<>();accounts.forEach(a->defaults.add(a.stay().get("default_recipient_id")));
-            check(defaults.size()==1&&!defaults.contains(null),400,"ผู้รับเริ่มต้นของแต่ละห้องไม่ตรงกันหรือยังว่าง กรุณาเลือกผู้รับเอกสารหนึ่งราย");
-            recipient=((Number)defaults.iterator().next()).intValue();source="ผู้รับเริ่มต้นเดียวกันของทุกห้องที่เลือก";
-        }
-        var profile=one("SELECT * FROM document_recipient WHERE recipient_id=? FOR UPDATE",recipient);
-        check(profile.get("address")!=null&&!profile.get("address").toString().isBlank(),400,"เติมที่อยู่ผู้รับเอกสารใน UC03 ก่อนออกเอกสาร");
-        if("ORGANIZATION".equals(profile.get("recipient_type")))check(profile.get("tax_id")!=null&&!profile.get("tax_id").toString().isBlank(),400,"เติมเลขผู้เสียภาษีของหน่วยงานก่อนออกเอกสาร");
-        List<Integer> paymentIds=accounts.stream().flatMap(a->a.allocations().stream()).map(a->number(a,"payment_id")).distinct().sorted().toList();
-        List<Map<String,Object>> payments=new ArrayList<>();
-        for(int id:paymentIds) {
-            var payment=new HashMap<>(one("SELECT * FROM payment WHERE payment_id=?",id));
-            payment.put("methods",jdbc.queryForList("SELECT method,amount FROM payment_method WHERE payment_id=? ORDER BY payment_method_id",id));
-            payment.put("allocated_amount",accounts.stream().flatMap(a->a.allocations().stream()).filter(a->number(a,"payment_id")==id).map(a->(BigDecimal)a.get("amount")).reduce(BigDecimal.ZERO,BigDecimal::add));payments.add(payment);
-        }
-        return new DocumentView(reference,recipient,profile,source,accounts,stays,paymentIds,payments,existing,accounts.stream().map(StayAccount::total).reduce(BigDecimal.ZERO,BigDecimal::add));
+    private ReceiptReference mapToReceiptReference(Map<String,Object> saved,List<Integer> savedStays,List<Integer> savedPayments,DocumentView documentData) {
+        check(number(saved,"recipient_id")==documentData.recipientId(),409,"อ่านผู้รับใบเสร็จกลับไม่สำเร็จ");
+        check(new HashSet<>(savedStays).equals(new HashSet<>(documentData.stayIds())),409,"อ่านรายการพักที่เชื่อมกลับไม่ครบ");
+        check(new HashSet<>(savedPayments).equals(new HashSet<>(documentData.paymentIds())),409,"อ่านเงินรับที่เชื่อมกลับไม่ครบ");
+        return new ReceiptReference(number(saved,"reference_id"),number(saved,"recipient_id"),List.copyOf(savedStays),List.copyOf(savedPayments));
     }
-    public record DocumentView(Integer referenceId,int recipientId,Map<String,Object> recipient,String recipientSource,List<StayAccount> accounts,List<Integer> stayIds,List<Integer> paymentIds,List<Map<String,Object>> payments,Map<String,Object> reference,BigDecimal total) {}
+    private ReceiptResult makeReceiptResult(ReceiptReference savedReference) {return new ReceiptResult(savedReference.referenceId());}
+    private DeskProblem makeValidationResult(DeskProblem problem) {return new DeskProblem(problem.status,problem.getMessage());}
+    private record ReceiptDraft(String bookNumber,String receiptNumber,java.time.LocalDate receiptDate) {}
+    public record ReceiptReference(int referenceId,int recipientId,List<Integer> stayIds,List<Integer> paymentIds) {}
+    public record ReceiptResult(int referenceId) {}
+    public record FolioPreview(DocumentView documentData,java.time.LocalDateTime generatedAt,BigDecimal total) {}
+    private record DocumentRecords(Integer referenceId,int recipientId,Map<String,Object> recipient,String recipientSource,List<StayAccount> accounts,List<Integer> stayIds,List<Integer> paymentIds,List<Map<String,Object>> payments,Map<String,Object> reference) {}
+
 }

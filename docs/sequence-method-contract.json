@@ -1,0 +1,274 @@
+{
+  "diagram": "Hotel_Sequence_Diagrams_Controller_Only.drawio",
+  "required": {
+    "RoomListUI": [
+      "displaySearchResult"
+    ],
+    "RoomListController": [
+      "makeSearchResult",
+      "makeValidationResult",
+      "searchAvailableRooms",
+      "validateSearchCriteria"
+    ],
+    "BookingUI": [
+      "displayBookingResult",
+      "displayBookings"
+    ],
+    "BookingController": [
+      "findBookings",
+      "makeBookingResult",
+      "makeValidationResult",
+      "mapToBooking",
+      "saveBookingChange",
+      "submitBookingChange",
+      "validateRequest"
+    ],
+    "GuestUI": [
+      "displayProfiles",
+      "displaySaveResult",
+      "selectProfile"
+    ],
+    "GuestController": [
+      "findProfiles",
+      "loadProfiles",
+      "makeProfileResult",
+      "makeValidationResult",
+      "mapToProfile",
+      "mapToProfiles",
+      "persistProfile",
+      "saveProfile",
+      "validateProfile"
+    ],
+    "CheckInUI": [
+      "displayCheckInResult"
+    ],
+    "CheckInController": [
+      "addBookingCheckInCommands",
+      "buildCheckInCommands",
+      "buildStayDraft",
+      "checkIn",
+      "makeCheckInResult",
+      "makeValidationResult",
+      "mapToCheckInData",
+      "saveCheckIn",
+      "validateCheckIn"
+    ],
+    "PaymentUI": [
+      "displayPaymentResult",
+      "displayStayBalances"
+    ],
+    "PaymentController": [
+      "calculateBalances",
+      "findStayBalances",
+      "findStayPaymentData",
+      "makeSaveFailureResult",
+      "makeSuccessResult",
+      "makeValidationResult",
+      "mapToSavedPaymentData",
+      "mapToStayPaymentData",
+      "recordPayment",
+      "savePayment",
+      "validatePayment"
+    ],
+    "DocumentUI": [
+      "displayDocumentContext",
+      "displayFolioPreview",
+      "displayReceiptResult",
+      "displayReceiptWritingDetails"
+    ],
+    "DocumentController": [
+      "buildFolio",
+      "checkDocumentContext",
+      "createFolioPreview",
+      "getDocumentData",
+      "loadDocumentContext",
+      "makeReceiptResult",
+      "makeValidationResult",
+      "mapToDocumentData",
+      "mapToReceiptReference",
+      "persistReceiptReference",
+      "saveReceiptReference",
+      "validateReceiptReference"
+    ],
+    "CheckOutUI": [
+      "displayCheckOutDetails",
+      "displayCheckOutResult"
+    ],
+    "CheckOutController": [
+      "checkOut",
+      "findCheckOutDetails",
+      "getActiveStayCheckOutData",
+      "makeCheckOutResult",
+      "makeValidationResult",
+      "mapToCheckOutData",
+      "mapToSavedCheckOutData",
+      "prepareCheckOutDetails",
+      "saveCheckOut",
+      "validateCheckOut"
+    ],
+    "RoomStatusUI": [
+      "displayRoomStatus",
+      "displayRoomStatusResult"
+    ],
+    "RoomStatusController": [
+      "evaluateReadiness",
+      "getRoomStatus",
+      "makeRoomStatusResult",
+      "makeRoomStatusSaveResult",
+      "makeValidationResult",
+      "mapToRoom",
+      "saveRoomCondition",
+      "updateRoomStatus",
+      "validateStatusChange"
+    ],
+    "StayReportUI": [
+      "displayReportResult"
+    ],
+    "StayReportController": [
+      "buildStayReport",
+      "generateStayReport",
+      "loadStayReportData",
+      "makeLoadFailureResult",
+      "makeValidationResult",
+      "mapToStayReportRows",
+      "validateCriteria"
+    ],
+    "CashReportUI": [
+      "displayReportResult"
+    ],
+    "CashReportController": [
+      "buildCashReport",
+      "generateCashReport",
+      "loadCashReportData",
+      "makeLoadFailureResult",
+      "makeValidationResult",
+      "mapToCashReportRows",
+      "validateCriteria"
+    ],
+    "RoomCollection": [
+      "applySavedBooking",
+      "applySavedCheckIn",
+      "applySavedCheckOut",
+      "applySavedRoom",
+      "checkAvailability",
+      "checkCheckInReadiness",
+      "findBookings",
+      "findRoom",
+      "getRooms",
+      "storeBookingData",
+      "storeCheckInData",
+      "storeRoomList",
+      "storeRoomStates"
+    ]
+  },
+  "flows": {
+    "RoomListController.searchAvailableRooms": [
+      "loadRoomList",
+      "validateSearchCriteria",
+      "getRooms",
+      "makeSearchResult",
+      "displaySearchResult"
+    ],
+    "BookingController.submitBookingChange": [
+      "loadBookingData",
+      "validateRequest",
+      "checkAvailability",
+      "saveBookingChange",
+      "applySavedBooking",
+      "makeBookingResult",
+      "displayBookingResult"
+    ],
+    "GuestController.findProfiles": [
+      "loadProfiles",
+      "displayProfiles",
+      "selectProfile"
+    ],
+    "GuestController.loadProfiles": [
+      "queryForList",
+      "mapToProfiles"
+    ],
+    "GuestController.saveProfile": [
+      "validateProfile",
+      "persistProfile",
+      "makeProfileResult",
+      "displaySaveResult"
+    ],
+    "CheckInController.checkIn": [
+      "loadCheckInContext",
+      "storeCheckInData",
+      "validateCheckIn",
+      "checkCheckInReadiness",
+      "buildStayDraft",
+      "saveCheckIn",
+      "applySavedCheckIn",
+      "makeCheckInResult",
+      "displayCheckInResult"
+    ],
+    "PaymentController.findStayBalances": [
+      "findStayPaymentData",
+      "calculateBalances",
+      "displayStayBalances"
+    ],
+    "PaymentController.recordPayment": [
+      "validatePayment",
+      "savePayment",
+      "calculateBalances",
+      "makeSuccessResult",
+      "displayPaymentResult"
+    ],
+    "DocumentController.loadDocumentContext": [
+      "getDocumentData",
+      "checkDocumentContext"
+    ],
+    "DocumentController.createFolioPreview": [
+      "buildFolio"
+    ],
+    "DocumentController.saveReceiptReference": [
+      "validateReceiptReference",
+      "persistReceiptReference",
+      "makeReceiptResult",
+      "displayReceiptResult"
+    ],
+    "CheckOutController.findCheckOutDetails": [
+      "getActiveStayCheckOutData",
+      "prepareCheckOutDetails",
+      "displayCheckOutDetails"
+    ],
+    "CheckOutController.checkOut": [
+      "validateCheckOut",
+      "saveCheckOut",
+      "applySavedCheckOut",
+      "makeCheckOutResult",
+      "displayCheckOutResult"
+    ],
+    "RoomStatusController.updateRoomStatus": [
+      "validateStatusChange",
+      "saveRoomCondition",
+      "applySavedRoom",
+      "evaluateReadiness",
+      "makeRoomStatusSaveResult",
+      "displayRoomStatusResult"
+    ],
+    "StayReportController.generateStayReport": [
+      "validateCriteria",
+      "loadStayReportData",
+      "mapToStayReportRows",
+      "buildStayReport"
+    ],
+    "CashReportController.generateCashReport": [
+      "validateCriteria",
+      "loadCashReportData",
+      "mapToCashReportRows",
+      "buildCashReport"
+    ],
+    "CashReportController.loadCashReportData": [
+      "queryForList",
+      "queryForList",
+      "queryForList"
+    ]
+  },
+  "browser": {
+    "submitSearch": "room-selection.js",
+    "openPrintDialog": "desk.js"
+  }
+}

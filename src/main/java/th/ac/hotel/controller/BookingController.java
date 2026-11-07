@@ -1,5 +1,7 @@
 package th.ac.hotel.controller;
 
+import th.ac.hotel.ui.BookingUI;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -65,9 +67,9 @@ public class BookingController {
         RoomCollection collection = loadBookingData(model, response);
         model.addAttribute("searchText", searchText);
         model.addAttribute("includeCancelled", includeCancelled);
-        if (collection != null) model.addAttribute("bookings", collection.findBookings(searchText).stream()
+        if (collection != null) BookingUI.displayBookings(collection.findBookings(searchText).stream()
                 .filter(booking -> includeCancelled || booking.bookedCount() > 0 || booking.hasCheckedIn())
-                .toList());
+                .toList(),model);
         return "bookings";
     }
 
@@ -130,13 +132,19 @@ public class BookingController {
         if (id != null) model.addAttribute("booking", collection.findBooking(id));
         try {
             BookingChange change = validateRequest(action, id, name, phone, rows, removedIds, input);
+            if (!"CANCEL".equals(change.action())) {
+                var conflicts = collection.checkAvailability(change.items().stream().map(ItemChange::request).toList(),change.bookingId());
+                if (!conflicts.isEmpty()) throw new BookingProblem(409,conflicts.stream().map(RoomConflict::reason).toList());
+            }
             // execute() returns only after the write, read-back, mapping AND COMMIT succeed.
             Booking saved = saveBookingChange(change, staff.employeeId());
             collection.applySavedBooking(saved);
-            return "redirect:/bookings/" + saved.bookingId() + "?saved=" + action.toLowerCase(Locale.ROOT);
+            BookingResult result = makeBookingResult(saved);
+            BookingUI.displayBookingResult(result,model);
+            return "redirect:/bookings/" + result.savedBooking().bookingId() + "?saved=" + action.toLowerCase(Locale.ROOT);
         } catch (BookingProblem problem) {
             response.setStatus(problem.status);
-            model.addAttribute("formErrors", problem.errors);
+            BookingUI.displayBookingResult(makeValidationResult(problem.errors,List.of()),model);
         } catch (DataAccessException problem) {
             log.warn("UC02 transaction failed: {}", problem.getClass().getSimpleName());
             response.setStatus(503);
@@ -319,4 +327,15 @@ public class BookingController {
         final int status; final List<String> errors;
         BookingProblem(int status,List<String> errors) { super(String.join("; ",errors));this.status=status;this.errors=List.copyOf(errors); }
     }
+
+    private BookingResult makeValidationResult(List<String> validationErrors,List<RoomConflict> conflicts) {
+        List<String> errors=new ArrayList<>(validationErrors);
+        conflicts.forEach(conflict->errors.add(conflict.reason()));
+        return new BookingResult(null,List.copyOf(errors));
+    }
+    private BookingResult makeBookingResult(Booking savedBooking) {
+        return new BookingResult(savedBooking,List.of());
+    }
+    public record BookingResult(Booking savedBooking,List<String> validationErrors) {}
+
 }

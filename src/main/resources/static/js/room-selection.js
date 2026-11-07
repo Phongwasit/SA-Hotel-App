@@ -35,3 +35,10 @@ if (roomSearch) {
     }
     refreshSelection();
 }
+
+// RoomListUI.submitSearch: native navigation keeps all selected room IDs and the clicked action.
+function submitSearch(event) {
+    const form=event.currentTarget;
+    if(!form.reportValidity())event.preventDefault();
+}
+document.getElementById('room-search-form')?.addEventListener('submit',submitSearch);

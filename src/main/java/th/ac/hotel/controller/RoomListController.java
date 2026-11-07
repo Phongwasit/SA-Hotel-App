@@ -1,5 +1,7 @@
 package th.ac.hotel.controller;
 
+import th.ac.hotel.ui.RoomListUI;
+
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +62,7 @@ public class RoomListController {
     }
 
     @PostMapping("/rooms/search")
-    public String search(@ModelAttribute("form") RoomSearchForm form,
+    public String searchAvailableRooms(@ModelAttribute("form") RoomSearchForm form,
                          @RequestParam(defaultValue = "") List<String> roomIds,
                          @RequestParam(defaultValue = "") String selectionCheckInDate,
                          @RequestParam(defaultValue = "") String selectionCheckOutDate,
@@ -86,21 +88,12 @@ public class RoomListController {
         model.addAttribute("selectedRooms", selectedIds.stream().map(collection::findRoom).toList());
         model.addAttribute("hiddenSelectedRooms", selectedIds.stream().map(collection::findRoom).toList());
         model.addAttribute("selectedRoomIds", selectedIds);
-        if (!ROOM_TYPES.contains(form.getRoomType())) errors.put("roomType", "กรุณาเลือกประเภทห้อง");
-        LocalDate checkIn = parseDate(form.getCheckInDate(), "checkInDate", errors);
-        LocalDate checkOut = parseDate(form.getCheckOutDate(), "checkOutDate", errors);
-        if (checkIn != null && checkOut != null && !checkOut.isAfter(checkIn)) {
-            errors.put("checkOutDate", "วันออกต้องอยู่หลังวันเริ่มพักอย่างน้อย 1 คืน");
-        }
-        int requiredRooms = 0;
-        try {
-            requiredRooms = Integer.parseInt(form.getRequiredRooms());
-            if (requiredRooms < 1) throw new NumberFormatException();
-        } catch (NumberFormatException | NullPointerException e) {
-            errors.put("requiredRooms", "ระบุจำนวนห้องเป็นจำนวนเต็มตั้งแต่ 1 ห้องขึ้นไป");
-        }
+        SearchCriteria criteria = validateSearchCriteria(form, errors);
+        LocalDate checkIn = criteria.checkInDate(), checkOut = criteria.checkOutDate();
+        int requiredRooms = criteria.requiredRooms();
         model.addAttribute("errors", errors);
         if (!errors.isEmpty()) {
+            RoomListUI.displaySearchResult(makeValidationResult(errors),model);
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return "rooms";
         }
@@ -120,6 +113,8 @@ public class RoomListController {
         }
 
         List<Room> matchingRooms = collection.getRooms(form.getRoomType(), checkIn, checkOut, requiredRooms);
+        SearchResult result = makeSearchResult(matchingRooms, requiredRooms);
+        RoomListUI.displaySearchResult(result,model);
         model.addAttribute("searched", true);
         model.addAttribute("matchingRooms", matchingRooms);
         var selected = selectedIds.stream().map(collection::findRoom).toList();
@@ -130,7 +125,7 @@ public class RoomListController {
         model.addAttribute("hiddenSelectedRooms", selected.stream().filter(room -> !shownIds.contains(room.roomId())).toList());
         model.addAttribute("availableCount", matchingRooms.size());
         model.addAttribute("requiredCount", requiredRooms);
-        model.addAttribute("shortfall", Math.max(0, requiredRooms - matchingRooms.size()));
+        model.addAttribute("shortfall", result.shortfall());
         model.addAttribute("nights", java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut));
         model.addAttribute("dateSummary", checkIn.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                 + " – " + checkOut.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
@@ -207,4 +202,31 @@ public class RoomListController {
                 rs.getString("bed_type"), rs.getString("occupancy"), rs.getString("cleanliness"), rs.getString("usability"),
                 rs.getString("condition_reason"), rs.getBigDecimal("standard_nightly_rate"), List.of());
     }
+
+    private SearchCriteria validateSearchCriteria(RoomSearchForm form, Map<String,String> errors) {
+        if (!ROOM_TYPES.contains(form.getRoomType())) errors.put("roomType", "กรุณาเลือกประเภทห้อง");
+        LocalDate checkIn = parseDate(form.getCheckInDate(), "checkInDate", errors);
+        LocalDate checkOut = parseDate(form.getCheckOutDate(), "checkOutDate", errors);
+        if (checkIn != null && checkOut != null && !checkOut.isAfter(checkIn)) {
+            errors.put("checkOutDate", "วันออกต้องอยู่หลังวันเริ่มพักอย่างน้อย 1 คืน");
+        }
+        int requiredRooms = 0;
+        try {
+            requiredRooms = Integer.parseInt(form.getRequiredRooms());
+            if (requiredRooms < 1) throw new NumberFormatException();
+        } catch (NumberFormatException | NullPointerException e) {
+            errors.put("requiredRooms", "ระบุจำนวนห้องเป็นจำนวนเต็มตั้งแต่ 1 ห้องขึ้นไป");
+        }
+
+        return new SearchCriteria(checkIn, checkOut, requiredRooms);
+    }
+    private SearchResult makeValidationResult(Map<String,String> validationErrors) {
+        return new SearchResult(List.of(), 0, Map.copyOf(validationErrors));
+    }
+    private SearchResult makeSearchResult(List<Room> matchingRooms, int requiredRooms) {
+        return new SearchResult(List.copyOf(matchingRooms), Math.max(0, requiredRooms-matchingRooms.size()), Map.of());
+    }
+    private record SearchCriteria(LocalDate checkInDate,LocalDate checkOutDate,int requiredRooms) {}
+    public record SearchResult(List<Room> matchingRooms,int shortfall,Map<String,String> validationErrors) {}
+
 }
